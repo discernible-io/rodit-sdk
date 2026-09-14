@@ -1145,9 +1145,6 @@ class RoditClient {
           case 'RODIT_NOT_LIVE':
             errorMessage += '\n→ [CLIENT REJECTED] Your RODiT is expired or not yet valid. Check the validity period.';
             break;
-          case 'RODIT_REVOKED':
-            errorMessage += '\n→ [CLIENT REJECTED] Your RODiT has been revoked and is no longer valid.';
-            break;
           case 'SMART_CONTRACT_NOT_TRUSTED':
             errorMessage += '\n→ [CLIENT REJECTED] The smart contract that issued your RODiT is not trusted by this server.';
             break;
@@ -1159,9 +1156,6 @@ class RoditClient {
             break;
           case 'SERVER_RODIT_NOT_LIVE':
             errorMessage += '\n→ [SERVER REJECTED] The server\'s RODiT is expired or not yet valid. Contact the server administrator.';
-            break;
-          case 'SERVER_RODIT_REVOKED':
-            errorMessage += '\n→ [SERVER REJECTED] The server\'s RODiT has been revoked. Contact the server administrator.';
             break;
           case 'SERVER_SMART_CONTRACT_NOT_TRUSTED':
             errorMessage += '\n→ [SERVER REJECTED] The server\'s issuing smart contract is not trusted by your client. Update your trust configuration.';

@@ -6,6 +6,7 @@ Source for the npm packages that power [**RODiT**](https://www.discernible.io)-b
 |---------|-----------|-----|------|
 | [@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be) | [rodit-auth-be/](rodit-auth-be/) | [npm](https://www.npmjs.com/package/@rodit/rodit-auth-be) | Node.js / Express server SDK — login, JWT, permissions, webhooks |
 | [@rodit/rodit-auth-fe](https://www.npmjs.com/package/@rodit/rodit-auth-fe) | [rodit-auth-fe/](rodit-auth-fe/) | [npm](https://www.npmjs.com/package/@rodit/rodit-auth-fe) | Browser / NEP-413 client SDK |
+| @rodit/hola-client | [hola-client/](hola-client/) | [npm](https://www.npmjs.com/package/@rodit/hola-client) | Create / sign HOLA lines (nonce + Ed25519 + checksum) |
 | @rodit/verify-hola | [verify-hola/](verify-hola/) | [npm](https://www.npmjs.com/package/@rodit/verify-hola) | Verify-before-execute HOLA CLI & library |
 
 ## What is RODiT?
@@ -42,6 +43,28 @@ To build a new RODiT-powered API: install [`@rodit/rodit-auth-be`](https://www.n
 | API contract | [api.identyclaw.com/.well-known/mcp](https://api.identyclaw.com/.well-known/mcp) |
 | Product | [discernible.io](https://www.discernible.io) |
 
+## Quick start — create HOLA
+
+Requires an IdentyClaw API JWT (`POST /api/login`) and the Passport NEAR private key.
+
+```bash
+cd hola-client && npm install
+```
+
+```javascript
+const { createHola } = require("@rodit/hola-client");
+
+const { hola } = await createHola({
+  baseUrl: "https://api.identyclaw.com",
+  jwt: process.env.IDENTYCLAW_JWT,
+  nearPrivateKey: process.env.IDENTYCLAW_NEAR_PRIVATE_KEY,
+  tokenId: "yourpassportid",
+  recipient: "MUNDO"
+});
+```
+
+See [hola-client/README.md](hola-client/README.md).
+
 ## Quick start — verify HOLA (recommended)
 
 No IdentyClaw API in the verify path — your machine reads chain state via FastNear (or any NEAR RPC).
@@ -75,6 +98,7 @@ npx @rodit/verify-hola report "HOLA/MUNDO/..."
 
 - [rodit-auth-be/README.md](rodit-auth-be/README.md) — Node/Express mutual auth
 - [rodit-auth-fe/README.md](rodit-auth-fe/README.md) — browser SDK
+- [hola-client/README.md](hola-client/README.md) — HOLA create / sign library
 - [verify-hola/README.md](verify-hola/README.md) — HOLA verification CLI
 
 ---

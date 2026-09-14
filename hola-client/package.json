@@ -1,15 +1,12 @@
 {
-  "name": "@rodit/verify-hola",
+  "name": "@rodit/hola-client",
   "version": "0.1.0",
-  "description": "Verify HOLA lines and build passport reports via api.identyclaw.com (no JWT required for verify)",
-  "license": "MIT",
+  "description": "Create and parse IdentyClaw HOLA handshake lines (uppercase canonicalization, base32, mod-23 checksum)",
+  "license": "MIT-0",
   "type": "commonjs",
-  "main": "lib/report.js",
-  "bin": {
-    "verify-hola": "bin/verify-hola.js"
-  },
+  "main": "./index.js",
   "dependencies": {
-    "@rodit/rodit-auth-be": "9.15.0",
+    "bs58": "^5.0.0",
     "hi-base32": "^0.5.1",
     "tweetnacl": "^1.0.3"
   },
@@ -17,7 +14,7 @@
     "node": ">=18"
   },
   "files": [
-    "bin",
+    "index.js",
     "lib",
     "README.md"
   ],
@@ -25,7 +22,7 @@
     "identyclaw",
     "hola",
     "agent-identity",
-    "verification",
+    "signing",
     "near",
     "rodit"
   ],
@@ -34,16 +31,16 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/discernible-io/rodit-sdk.git",
-    "directory": "verify-hola"
+    "directory": "hola-client"
   },
   "bugs": {
     "url": "https://github.com/discernible-io/rodit-sdk/issues"
   },
-  "homepage": "https://github.com/discernible-io/rodit-sdk/tree/main/verify-hola#readme",
+  "homepage": "https://github.com/discernible-io/rodit-sdk/tree/main/hola-client#readme",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "test": "node --test test/report.test.js"
+    "test": "node --test test/*.test.js"
   }
 }

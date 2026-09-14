@@ -993,32 +993,6 @@ async function verify_rodit_ownership(
         };
       }
 
-      const activeStart = Date.now();
-      const isActive = await verify_rodit_isactive(
-        peer_rodit.token_id,
-        config_own_rodit.own_rodit.metadata.subjectuniqueidentifier_url
-      );
-      const activeDuration = Date.now() - activeStart;
-
-      logger.debug("Active verification completed", {
-        requestId,
-        activeDuration,
-        isActive,
-      });
-
-      if (!isActive) {
-        logger.warn("RODiT active verification failed", {
-          requestId,
-          roditId: peerroditid,
-        });
-        return {
-          peer_rodit,
-          goodrodit: false,
-          failureReason: "RODIT_REVOKED",
-          failureMessage: "RODiT has been revoked"
-        };
-      }
-
       const trustedStart = Date.now();
       const isTrusted = await verify_rodit_istrusted_issuingsmartcontract(
         config_own_rodit.own_rodit.metadata.subjectuniqueidentifier_url
@@ -1238,119 +1212,6 @@ async function verify_rodit_ownership(
         });
   
       return false;
-    }
-  }
-
-  async function verify_rodit_isactive(tokenId, ownsubjectuniqueidentifier_url) {
-    const requestId = ulid();
-    const startTime = Date.now();
-  
-    // WHILE DEBUGGING TEMPORARY FIX DO NOT REMOVE THIS LINE EVER WITHOUT PERMISSION
-    return true;
-  
-    logger.debug("Checking RODiT activity status", {
-      component: "RoditAuth",
-      method: "verify_rodit_isactive",
-      requestId,
-      tokenId,
-      subjectUrl: ownsubjectuniqueidentifier_url,
-    });
-  
-    const domainandextensionRegex =
-      /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/i;
-  
-    const match = ownsubjectuniqueidentifier_url.match(domainandextensionRegex);
-  
-    if (match) {
-      const domainandextension = match[1];
-      const revokingDnsEntry = `${tokenId}.revoked.${domainandextension}`;
-  
-      logger.debug("Checking DNS revocation entry", {
-        requestId,
-        domain: domainandextension,
-        revokingDnsEntry,
-      });
-  
-      try {
-        const dnsStart = Date.now();
-        const resolver = new Resolver();
-        await resolver.resolveTxt(revokingDnsEntry);
-        const dnsDuration = Date.now() - dnsStart;
-        const totalDuration = Date.now() - startTime;
-  
-        logger.info("RODiT revocation found", {
-          component: "AuthServices",
-          method: "verify_rodit_isactive",
-          requestId,
-          duration: totalDuration,
-          dnsDuration,
-          tokenId,
-          domain: domainandextension,
-          revokingDnsEntry,
-          isActive: false,
-        });
-  
-        // Add metrics for revoked tokens
-        logger.metric &&
-          logger.metric("rodit_revocation_checks", totalDuration, {
-            result: "revoked",
-            token_id: tokenId,
-          });
-  
-        return false;
-      } catch (error) {
-        // DNS error usually means no revocation entry found, which is good
-        const dnsDuration = Date.now() - dnsStart || 0;
-        const totalDuration = Date.now() - startTime;
-  
-        logger.debug("No revocation found for RODiT", {
-          requestId,
-          dnsDuration,
-          tokenId,
-          error: error.code,
-        });
-  
-        logger.info("RODiT is active", {
-          component: "AuthServices",
-          method: "verify_rodit_isactive",
-          requestId,
-          duration: totalDuration,
-          dnsDuration,
-          tokenId,
-          domain: domainandextension,
-          isActive: true,
-        });
-  
-        // Add metrics for active tokens
-        logger.metric &&
-          logger.metric("rodit_revocation_checks", totalDuration, {
-            result: "active",
-            token_id: tokenId,
-          });
-  
-        return true;
-      }
-    } else {
-      const duration = Date.now() - startTime;
-  
-      logger.warn("Unable to parse domain from URL", {
-        component: "AuthServices",
-        method: "verify_rodit_isactive",
-        requestId,
-        duration,
-        tokenId,
-        subjectUrl: ownsubjectuniqueidentifier_url,
-      });
-  
-      // Add metrics for parsing errors
-      logger.metric &&
-        logger.metric("rodit_revocation_checks", duration, {
-          result: "parse_error",
-          token_id: tokenId,
-        });
-  
-      // Default to allowing the token if domain parsing fails
-      return true;
     }
   }
 
@@ -1963,7 +1824,6 @@ module.exports = {
   resolve_peer_rodit_for_login,
   verify_peer_rodit,
   validateTimestamp,
-  verify_rodit_isactive,
   verify_rodit_isamatch,
   verify_rodit_islive,
   verify_rodit_istrusted_issuingsmartcontract,

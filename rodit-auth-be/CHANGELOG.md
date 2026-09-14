@@ -2,6 +2,19 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [9.16.0] — 2026-09-14
+
+### Removed
+
+- **`verify_rodit_isactive`** — DNS TXT revocation check
+  (`<token_id>.revoked.<domain>`). The function short-circuited with an
+  unconditional `return true` while debugging, so its body was unreachable and
+  no RODiT could be rejected as revoked. Removed along with its call sites in
+  `verify_peer_rodit` and `thorough_validate_jwt_token_be`, and the
+  `RODIT_REVOKED` / `SERVER_RODIT_REVOKED` failure codes they emitted.
+  No behavior change; the SDK now has no revocation check.
+  `verify_rodit_isactive_fe` in `@rodit/rodit-auth-fe` is unaffected.
+
 ## [9.15.0] — 2026-08-11
 
 ### Added
