@@ -2,6 +2,14 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [9.16.1] — 2026-09-18
+
+### Changed
+
+- **Docs:** Clarify that peer `webhook_url` / `rodit_webhookurl` is a base
+  (`host` or `host:port` only). The SDK appends the endpoint path; including
+  `/hooks/wake` or `/hooks/agent` in the metadata doubles the path.
+
 ## [9.16.0] — 2026-09-14
 
 ### Removed
