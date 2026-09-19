@@ -121,6 +121,27 @@ function validateOutboundWebhookUrl(raw) {
   return parsed;
 }
 
+/**
+ * Build the absolute outbound webhook URL.
+ * If `webhookUrl` is host-only (`host` or `host:port`), append `endpoint`.
+ * If it already includes a path, use that path as-is (do not append).
+ *
+ * @param {string} webhookUrl Peer `rodit_webhookurl` / `webhook_url` (scheme optional)
+ * @param {string} [endpoint='/webhook'] Path to append when none is present
+ * @returns {string} Absolute https URL
+ */
+function formatOutboundWebhookTargetUrl(webhookUrl, endpoint = "/webhook") {
+  const cleanWebhookUrl = String(webhookUrl || "")
+    .replace(/^(https?:\/\/)/i, "")
+    .replace(/\/+$/, "");
+  const hasPath = cleanWebhookUrl.includes("/");
+  if (hasPath) {
+    return `https://${cleanWebhookUrl}`;
+  }
+  const normalizedEndpoint = `/${String(endpoint || "/webhook").replace(/^\/+/, "")}`;
+  return `https://${cleanWebhookUrl}${normalizedEndpoint}`;
+}
+
 function ipv4ToInt(ip) {
   return ip.split(".").reduce((acc, oct) => ((acc << 8) + Number(oct)) >>> 0, 0) >>> 0;
 }
@@ -1208,13 +1229,9 @@ async function resolveOutboundWebhookSessionId(options = {}, req = null) {
         endpoint
       });
    
-      // Normalize base URL and endpoint so we always produce exactly one slash
-      // between host and path (e.g. https://host/hooks/wake).
-      const cleanWebhookUrl = webhookUrl
-        .replace(/^(https?:\/\/)/, "")
-        .replace(/\/+$/, "");
-      const normalizedEndpoint = `/${String(endpoint || "/webhook").replace(/^\/+/, "")}`;
-      const formattedWebhookUrl = `https://${cleanWebhookUrl}${normalizedEndpoint}`;
+      // Append endpoint only when webhook_url has no path
+      // (e.g. host:7443 → …/hooks/wake; host:7443/hooks/agent stays as-is).
+      const formattedWebhookUrl = formatOutboundWebhookTargetUrl(webhookUrl, endpoint);
 
       // Outbound SSRF controls: reject userinfo / private / metadata destinations,
       // enforce peer webhook_cidr, and pin DNS for the request lifetime.
@@ -2101,6 +2118,7 @@ module.exports = {
 
   // Outbound SSRF / CIDR / DNS-pin helpers
   validateOutboundWebhookUrl,
+  formatOutboundWebhookTargetUrl,
   resolveAndPinWebhookDestination,
   createPinnedDispatcher,
 

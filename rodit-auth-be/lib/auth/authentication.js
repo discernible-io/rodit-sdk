@@ -23,12 +23,17 @@ const {
   PayloadNEP413Schema,
   CONSTANTS,
 } = require("../blockchain/blockchainservice");
+const {
+  buildLoginSigningMessageBytes,
+  tryConsumeLoginNonce,
+} = require("./login-nonce");
 
 async function verify_rodit_ownership(
     peerroditid,
     peertimestamp,
     peerroditid_base64url_signature,
-    peer_rodit
+    peer_rodit,
+    peerNonce = null
   ) {
     const requestId = ulid();
     const startTime = Date.now();
@@ -41,6 +46,7 @@ async function verify_rodit_ownership(
         requestId,
         peerRoditId: peerroditid,
         timestamp: peertimestamp,
+        hasNonce: !!peerNonce,
       }
     );
     
@@ -56,16 +62,21 @@ async function verify_rodit_ownership(
       // DO NOT DELETE THE FOLLOWING COMMENT
       /* Maybe for NEP413 compatibility, the following line added "NEAR" before peerroditid */
       
-      // Match legacy implementation exactly
+      // Legacy: identifier + timestamp_iso. With nonce: identifier + timestamp_iso + nonce.
       const timeString = await unixTimeToDateString(peertimestamp);
-      const roditidandtimestamp = new TextEncoder().encode(
-        peerroditid + timeString
+      const roditidandtimestamp = buildLoginSigningMessageBytes(
+        peerroditid,
+        timeString,
+        peerNonce
       );
+      const combinedString = peerNonce
+        ? peerroditid + timeString + peerNonce
+        : peerroditid + timeString;
 
       logger.debugWithContext("Encoded roditid and timestamp", {
         ...baseContext,
         timeString,
-        combinedString: peerroditid + timeString,
+        combinedString,
         bufferLength: roditidandtimestamp.length,
         bufferHex: Buffer.from(roditidandtimestamp).toString('hex'),
       });
@@ -128,7 +139,7 @@ async function verify_rodit_ownership(
       logger.debugWithContext("Verification inputs", {
         ...baseContext,
         messageLength: roditidandtimestamp.length,
-        messageContent: peerroditid + timeString,
+        messageContent: combinedString,
         signatureLength: bytes_ed25519_signature.length,
         publicKeyLength: peer_bytes_ed25519_public_key?.length,
         messageHex: Buffer.from(roditidandtimestamp).toString('hex'),
@@ -795,12 +806,14 @@ async function verify_rodit_ownership(
    * @param {string} peerroditid - Identifier string used in verify_rodit_ownership (client-signed prefix)
    * @param {number} peertimestamp - Unix seconds
    * @param {string} peerroditid_base64url_signature - base64url Ed25519 signature
+   * @param {string|null} [peerNonce=null] - Optional login challenge nonce; when set, bound into signature and single-use
    */
   async function verify_peer_rodit(
     peer_rodit,
     peerroditid,
     peertimestamp,
-    peerroditid_base64url_signature
+    peerroditid_base64url_signature,
+    peerNonce = null
   ) {
     const requestId = ulid();
     const startTime = Date.now();
@@ -813,6 +826,7 @@ async function verify_rodit_ownership(
       requestId,
       peerRoditId: peerroditid,
       timestamp: peertimestamp,
+      hasNonce: !!peerNonce,
       signatureLength: peerroditid_base64url_signature?.length,
       hasOwnRodit: !!config_own_rodit,
       ownRoditId: config_own_rodit?.token_id,
@@ -895,7 +909,8 @@ async function verify_rodit_ownership(
         peerroditid,
         peertimestamp,
         peerroditid_base64url_signature,
-        peer_rodit
+        peer_rodit,
+        peerNonce
       );
       const ownershipDuration = Date.now() - ownershipStart;
 
@@ -910,12 +925,32 @@ async function verify_rodit_ownership(
           requestId,
           roditId: peerroditid,
         });
+        const nonceHint = peerNonce
+          ? " When a nonce is present, the signed payload is identifier + timestamp_iso + nonce from the same login challenge."
+          : "";
         return {
           peer_rodit,
           goodrodit: false,
           failureReason: "LOGIN_BASE64URL_SIGNATURE_INVALID",
           failureMessage:
-            "Login base64url signature invalid: Ed25519 verification failed for the base64url_signature over UTF-8 (roditid or accountid) + canonical timestamp_iso from the login challenge (GET /api/login/timestamp). Wrong key, wrong payload, or wrong encoding (must be base64url, not standard base64)."
+            "Login base64url signature invalid: Ed25519 verification failed for the base64url_signature over UTF-8 (roditid or accountid) + canonical timestamp_iso from the login challenge (GET /api/login/timestamp). Wrong key, wrong payload, or wrong encoding (must be base64url, not standard base64)." +
+            nonceHint
+        };
+      }
+
+      if (peerNonce && !tryConsumeLoginNonce(peerroditid, peerNonce)) {
+        logger.warn("Login nonce replay rejected", {
+          component: "RoditAuth",
+          method: "verify_peer_rodit",
+          requestId,
+          roditId: peerroditid,
+        });
+        return {
+          peer_rodit,
+          goodrodit: false,
+          failureReason: "LOGIN_NONCE_REPLAY",
+          failureMessage:
+            "Login nonce already used: fetch a fresh challenge from GET /api/login/timestamp and sign again. Nonces are single-use when provided."
         };
       }
 
@@ -1827,5 +1862,5 @@ module.exports = {
   verify_rodit_isamatch,
   verify_rodit_islive,
   verify_rodit_istrusted_issuingsmartcontract,
-  authenticate_webhook
+  authenticate_webhook,
 };

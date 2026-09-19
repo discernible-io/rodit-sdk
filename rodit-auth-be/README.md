@@ -4,7 +4,7 @@ Node.js / Express SDK for RODiT-based mutual authentication, authorization, sess
 
 **npm:** [https://www.npmjs.com/package/@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be)  
 **Monorepo:** [discernible-io/rodit-sdk](https://github.com/discernible-io/rodit-sdk) (this directory)  
-**Version:** 9.16.1 · **License:** Proprietary · **Author:** Discernible IO
+**Version:** 9.16.2 · **License:** Proprietary · **Author:** Discernible IO
 
 ## Production deployments
 
@@ -1197,7 +1197,7 @@ const jwtDuration = metadata.jwt_duration;  // JWT expiration time
 const maxRequests = metadata.max_requests;  // Rate limit
 const maxRqWindow = metadata.maxrq_window;  // Rate limit window
 const apiEndpoint = metadata.subjectuniqueidentifier_url;  // API URL
-const webhookUrl = metadata.webhook_url;  // Webhook base (host[:port] only)
+const webhookUrl = metadata.webhook_url;  // Webhook host[:port] (optional path)
 // Parse permissioned routes
 const permissionedRoutes = JSON.parse(metadata.permissioned_routes || '{}')
 // Use SDK config for application settings
@@ -1547,7 +1547,7 @@ Peer RODiT metadata:
 }
 ```
 
-- `webhook_url` — **base only**: `host` or `host:port` (scheme optional). Do **not** include a path such as `/hooks/wake` or `/hooks/agent`. The SDK owns the path and POSTs `https://{webhook_url}{endpoint}` (e.g. `https://hooks.example.com:7443/hooks/wake`). Passing a full hook URL doubles the path (`…/hooks/agent/hooks/wake`).
+- `webhook_url` — `host` or `host:port` (scheme optional), optionally with a path. If **no path** is present, the SDK appends `endpoint` (e.g. `https://hooks.example.com:7443/hooks/wake`). If a path is already present (e.g. `…:7443/hooks/agent`), that path is used as-is and nothing is appended.
 - `webhook_cidr` — allowlist for the **resolved** destination IP (`0.0.0.0/0` / empty = any public IP still subject to the SSRF blocklist)
 
 Outbound rejection codes (returned as `{ isValid: false, error: { code, message, requestId } }`):
@@ -2390,9 +2390,9 @@ const webhookHandler = roditClient.getWebhookHandler()
 
 Send a webhook notification to the peer URL in `req.user.rodit_webhookurl`.
 
-`rodit_webhookurl` must be a base (`host` or `host:port`). The SDK appends
-`options.endpoint` (default `/webhook`); do not put `/hooks/wake`,
-`/hooks/agent`, or any other path in the peer `webhook_url` metadata.
+`rodit_webhookurl` is typically a base (`host` or `host:port`). When it has
+no path, the SDK appends `options.endpoint` (default `/webhook`). When a path
+is already present, that path is used as-is (endpoint is not appended).
 
 Outbound delivery rejects private / loopback / metadata destinations (and
 resolved addresses), enforces peer JWT `rodit_webhookcidr` when set, and pins
@@ -2489,7 +2489,7 @@ When you call `roditClient.getConfigOwnRodit()`, you get access to these metadat
 | `subjectuniqueidentifier_url` | string | Primary API service endpoint |
 | `userselected_dn` | string | User-selected display name |
 | `webhook_cidr` | string | Allowlist CIDR(s) for outbound webhook resolved IPs (`0.0.0.0/0` = any public IP; private ranges are still blocked by SSRF controls) |
-| `webhook_url` | string | Peer webhook **base** (`host` or `host:port` only; no path). Used as `rodit_webhookurl` in issued JWTs; the SDK appends the endpoint path (e.g. `/hooks/wake`) |
+| `webhook_url` | string | Peer webhook host (`host` or `host:port`, optional path). Used as `rodit_webhookurl` in issued JWTs; the SDK appends the endpoint only when no path is present |
 
 ## Best Practices
 

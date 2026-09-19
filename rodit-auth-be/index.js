@@ -21,7 +21,8 @@ const {
   login_client_withnep413,
   login_portal,
   login_server,
-  logout_server
+  logout_server,
+  createLoginTimestampChallenge,
 } = require('./lib/middleware/authenticationmw');
 
 const {
@@ -1137,7 +1138,13 @@ class RoditClient {
             errorMessage += '\n→ [CLIENT REJECTED] The RODiT is missing required metadata. The RODiT may be corrupted or incomplete.';
             break;
           case 'LOGIN_BASE64URL_SIGNATURE_INVALID':
-            errorMessage += '\n→ [CLIENT REJECTED] The base64url login signature did not verify. Sign UTF-8 (roditid or accountid + canonical timestamp_iso) with the correct NEAR account private key; encoding must be base64url.';
+            errorMessage += '\n→ [CLIENT REJECTED] The base64url login signature did not verify. Sign UTF-8 (roditid or accountid + canonical timestamp_iso[, + nonce when present]) with the correct NEAR account private key; encoding must be base64url.';
+            break;
+          case 'LOGIN_NONCE_REPLAY':
+            errorMessage += '\n→ [CLIENT REJECTED] The login nonce was already used. Fetch a fresh challenge from GET /api/login/timestamp and sign again.';
+            break;
+          case 'INVALID_LOGIN_NONCE':
+            errorMessage += '\n→ [CLIENT REJECTED] The login nonce is malformed. Use the nonce string from GET /api/login/timestamp (base64url or hex).';
             break;
           case 'RODIT_FAMILY_MISMATCH':
             errorMessage += '\n→ [CLIENT REJECTED] Your RODiT does not belong to the same family as the server. You may need a different RODiT.';
@@ -1938,6 +1945,7 @@ module.exports = {
   login_portal,
   login_server,
   logout_server,
+  createLoginTimestampChallenge,
   validate_jwt_token_be,
   generate_jwt_token,
   normalizeUrlWithoutPort,

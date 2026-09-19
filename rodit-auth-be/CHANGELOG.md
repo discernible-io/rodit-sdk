@@ -2,6 +2,15 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [9.16.2] — 2026-09-19
+
+### Fixed
+
+- **`send_webhook` URL join:** append `endpoint` (e.g. `/hooks/wake`) only when
+  peer `webhook_url` / `rodit_webhookurl` has no path. A URL that already
+  includes a path (e.g. `host:7443/hooks/agent`) is used as-is, so paths are
+  no longer doubled.
+
 ## [9.16.1] — 2026-09-18
 
 ### Changed

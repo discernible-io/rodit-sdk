@@ -9,7 +9,7 @@
     "verify-hola": "bin/verify-hola.js"
   },
   "dependencies": {
-    "@rodit/rodit-auth-be": "9.16.0",
+    "@rodit/rodit-auth-be": "9.16.2",
     "hi-base32": "^0.5.1",
     "tweetnacl": "^1.0.3"
   },
