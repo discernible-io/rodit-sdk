@@ -968,6 +968,9 @@ export class RoditAuthService {
 
     localStorage.setItem("jwt_token", token);
     localStorage.setItem("tokenExpiration", exp.toString());
+
+    // Arm client-initiated refresh timer after login / New-Token absorption
+    this.setupTokenRefresh();
   }
 
   handleCallbackUrl(url) {
@@ -1027,7 +1030,8 @@ export class RoditAuthService {
         throw new Error("No token to refresh");
       }
 
-      const response = await fetch(`${this.apiEndpoint}/refresh`, {
+      const base = String(this.apiEndpoint || "").replace(/\/$/, "");
+      const response = await fetch(`${base}/api/refresh`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.jwt_token}`,
@@ -1040,7 +1044,12 @@ export class RoditAuthService {
         throw new Error("Token refresh failed");
       }
 
-      const { token } = await response.json();
+      const body = await response.json().catch(() => ({}));
+      const headerToken = response.headers?.get?.("New-Token");
+      const token = body.token || body.jwt_token || headerToken;
+      if (!token) {
+        throw new Error("Token refresh failed: no token in response");
+      }
       this.storeToken(token);
 
       return token;

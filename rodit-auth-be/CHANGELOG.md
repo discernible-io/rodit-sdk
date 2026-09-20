@@ -2,6 +2,26 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [Unreleased]
+
+### Added
+
+- **Optional client-initiated token refresh:** `refresh_client` Express handler
+  and `RoditClient.refresh_client` / `authenticateForRefresh` for hosts that
+  choose to mount `POST /api/refresh`. Default behavior is unchanged:
+  **server-initiated** renewal on authenticate via the `New-Token` header;
+  mounting `/api/refresh` is not required for normal operation.
+- **`SECURITY_OPTIONS.SERVERORCLIENT`:** honored. Default `SERVER-INITIATED`
+  keeps piggyback `New-Token` renewal. Optional `CLIENT-INITIATED` disables
+  piggyback renewal so clients must call `/api/refresh`.
+
+### Fixed
+
+- **Failed renewal when session closed:** renewal failures caused by an
+  inactive/closed session now propagate `reason: "session_closed"` and hard-fail
+  validation (`Error 012`) instead of soft-allowing expired credentials based
+  only on the JWT `session_exp` claim.
+
 ## [9.16.2] — 2026-09-19
 
 ### Fixed

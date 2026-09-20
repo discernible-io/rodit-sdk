@@ -24,7 +24,7 @@ Point `apiEndpoint` at your target API base URL; the server must run [`@rodit/ro
 This SDK is designed for **browser environments only** and provides:
 - **NEP-413 Authentication**: NEAR wallet signature-based authentication
 - **RODiT Token Management**: Fetch and verify RODiT tokens from NEAR blockchain
-- **JWT Session Management**: Handle JWT tokens with automatic refresh
+- **JWT Session Management**: Handle JWT tokens; absorb server `New-Token` renewals (default). Optional `POST /api/refresh` only if the host mounts it.
 - **Cryptographic Verification**: Verify RODiT ownership and signatures
 - **State Management**: Browser-compatible session and state storage
 
@@ -156,7 +156,7 @@ const result = await roditAuth.handleLoginCallback(window.location.href);
 2. Validates signature against stored login data
 3. Sends authentication request to API server
 4. Receives and stores JWT token
-5. Sets up automatic token refresh
+5. Optionally arms a client refresh timer (only useful if the API mounts `POST /api/refresh`; default renewal is server-initiated via `New-Token` on subsequent calls)
 
 ##### `fetchWithErrorHandling_fe(url, options)`
 
@@ -175,7 +175,8 @@ const response = await roditAuth.fetchWithErrorHandling_fe(
 
 **Features:**
 - Automatically adds JWT token to Authorization header
-- Handles token refresh if expired
+- Absorbs server-initiated renewals from the `New-Token` response header (default)
+- Optional client timer may call `POST /api/refresh` only if the host exposes it
 - Comprehensive error logging
 - Returns parsed JSON response
 
@@ -393,7 +394,7 @@ await roditAuth.login_server_withnep413({
 - **Nonce Generation**: Uses `window.crypto.getRandomValues()` for secure random nonce generation
 - **HTTPS Required**: Cryptographic operations require HTTPS context on main
 - **Ed25519 Signatures**: All RODiT ownership verification uses Ed25519 cryptography
-- **JWT Tokens**: Session tokens are JWT-based with automatic expiration and refresh
+- **JWT Tokens**: Session tokens are JWT-based with automatic expiration. By default the **server** renews access credentials on authenticated requests (`New-Token`). Explicit `POST /api/refresh` is optional and normally unnecessary.
 
 ### Browser Limitations
 
