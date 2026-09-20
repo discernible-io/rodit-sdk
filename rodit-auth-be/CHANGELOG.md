@@ -2,7 +2,7 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
-## [Unreleased]
+## [9.17.0] — 2026-09-20
 
 ### Added
 
