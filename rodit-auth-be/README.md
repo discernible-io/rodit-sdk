@@ -108,11 +108,6 @@ async function startServer() {
       req.logAction = 'logout-attempt';
       roditClient.logout_client(req, res);
     });
-    // Optional: only needed if clients call explicit refresh (default renewal is server-initiated via New-Token)
-    // app.post('/api/refresh', (req, res) => {
-    //   req.logAction = 'token-refresh';
-    //   roditClient.refresh_client(req, res);
-    // });
     app.get('/api/protected', authenticate, (req, res) => {
       res.json({ message: 'Protected data', user: req.user });
     });
@@ -793,19 +788,12 @@ For normal API authentication (`authenticate_apicall`), the SDK:
 
 Portal/outbound login token validation can skip session registration when `SECURITY_OPTIONS.RELAXED_SESSION_VALIDATION` is `true` (default).
 
-#### Access-credential renewal (default: server-initiated)
-
-By default (`SECURITY_OPTIONS.SERVERORCLIENT=SERVER-INITIATED`), the **server renews** the short-lived access JWT during authenticated API calls when the credential is past the lapsed-lifetime threshold (or already expired while the session is still active). Renewed credentials are returned in the **`New-Token` response header**. Clients only need to absorb that header; they do **not** need a dedicated refresh call for normal use.
-
-**Client-initiated refresh (`POST /api/refresh`) is optional.** Mount it only if you want idle clients (or a custom client timer) to renew without making another business API call, or if you set `SERVERORCLIENT=CLIENT-INITIATED` (which disables piggyback renewal on authenticate). Most deployments can omit `/api/refresh` entirely.
-
 #### Related options
 
 | Option | Purpose |
 |--------|---------|
 | `FALLBACK_JWT_DURATION` | Access-token lifetime when passport `jwt_duration` is missing or invalid (default `3600`; max 7 days in validator) |
 | `JWT_MAX_DURATION_SECONDS_RODIT_UNBOUNDED` | Cap on JWT `exp` when peer `not_after` is unbounded |
-| `SERVERORCLIENT` | `SERVER-INITIATED` (default): renew on authenticate + `New-Token`. `CLIENT-INITIATED`: no piggyback renewal; clients must call optional `POST /api/refresh` |
 | `RELAXED_SESSION_VALIDATION` | Portal/outbound flows may skip server session lookup |
 | `SESSION_VALIDATION_CACHE_TTL` | Cache TTL for session invalidation checks after logout |
 
@@ -1308,7 +1296,6 @@ export SECURITY_OPTIONS_LOGIN_MODE=partner  # partner, promiscuous, or p2p
 export SECURITY_OPTIONS_LAPSED_LIFETIME_PROPORTION_4RENEWAL_ELIGIBILITY=0.80
 export SECURITY_OPTIONS_THRESHOLD_VALIDATION_TYPE=0.10
 export SECURITY_OPTIONS_DURATIONRAMP=0.85
-# Default SERVER-INITIATED: server renews access JWT on authenticate (New-Token). CLIENT-INITIATED is optional/advanced.
 export SECURITY_OPTIONS_SERVERORCLIENT=SERVER-INITIATED
 export SECURITY_OPTIONS_SILENT_LOGIN_FAILURES=false
 // Server session lifetime (seconds from login; SDK default 5200)
@@ -2126,29 +2113,6 @@ app.post('/api/logout', authenticateLogout, (req, res) => roditClient.logout_cli
 
 **Use case:** clean logout when token is expired but cryptographically valid.
 
-##### refresh_client(req, res)
-
-**Optional.** Handle Express client-initiated access-credential refresh
-(`POST /api/refresh`). Most hosts do **not** need this route: by default the
-server renews access JWTs during authenticated API calls and returns them in
-the `New-Token` header.
-
-Mount this only when clients must renew without another API call (idle timers)
-or when `SECURITY_OPTIONS.SERVERORCLIENT=CLIENT-INITIATED` (piggyback renewal
-disabled). The handler validates a signature-valid Bearer JWT (expired
-credentials allowed while the server session is still active), forces renewal,
-and returns `{ token }` plus `New-Token`.
-
-```javascript
-// Optional — not required for default SERVER-INITIATED renewal
-app.post('/api/refresh', (req, res) => roditClient.refresh_client(req, res))
-```
-
-| `SERVERORCLIENT` | Behavior |
-|------------------|----------|
-| `SERVER-INITIATED` (default) | Server renews on authenticate; `New-Token` piggyback. `/api/refresh` is optional. |
-| `CLIENT-INITIATED` | No piggyback renewal; clients must call `/api/refresh` (route required). |
-
 ##### authorize(req, res, next)
 
 Express middleware for validating route permissions. Must be used after `authenticate`.
@@ -2762,12 +2726,6 @@ app.post('/api/logout', authenticateLogout, (req, res) => {
   req.logAction = 'logout-attempt'
   roditClient.logout_client(req, res)
 })
-// Optional — client-initiated refresh. Not required when using default
-// SERVER-INITIATED renewal (server returns New-Token on authenticated calls).
-// app.post('/api/refresh', (req, res) => {
-//   req.logAction = 'token-refresh'
-//   roditClient.refresh_client(req, res)
-// })
 ```
 
 ### 9. Route Mounting Order
