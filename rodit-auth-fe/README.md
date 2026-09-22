@@ -220,9 +220,9 @@ Verifies cryptographic ownership of a RODiT token by validating the Ed25519 sign
 
 Checks if a RODiT token is within its valid time period.
 
-#### `verify_rodit_isamatch(serviceprovider_id, peer_rodit_id)`
+#### `verify_rodit_isamatch(serviceprovider_id, peer_rodit, rpcUrl?, contractId?)`
 
-Verifies that a peer RODiT ID matches the service provider ID.
+Verifies that a peer RODiT matches the service provider ID. Optional `rpcUrl` and `contractId` are used for blockchain lookups; `RoditAuthService#verify_rodit_isamatch` passes the instance values.
 
 #### `verify_rodit_isactive_fe(tokenId, url)`
 

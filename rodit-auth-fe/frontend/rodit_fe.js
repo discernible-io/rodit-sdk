@@ -296,6 +296,142 @@ export async function verify_rodit_islive(peer_rodit_notafter, peer_rodit_notbef
 }
 
 /**
+ * Verifies that a peer RODiT matches the service provider ID by looking up
+ * signing tokens derived from the provider's bc=/sc=/id= components.
+ *
+ * @param {string} own_service_provider_id
+ * @param {object} peer_rodit
+ * @param {string|null} [rpcUrl=null]
+ * @param {string|null} [contractId=null]
+ * @returns {Promise<boolean>}
+ */
+export async function verify_rodit_isamatch(
+  own_service_provider_id,
+  peer_rodit,
+  rpcUrl = null,
+  contractId = null
+) {
+  logger.debug("Starting RODiT match verification", {
+    component: "verify_rodit_isamatch",
+    ownServiceProviderId: own_service_provider_id,
+    peerRoditId: peer_rodit?.token_id,
+  });
+
+  try {
+    const own_provider_components = own_service_provider_id.split(";");
+
+    logger.debug("Split provider components", {
+      component: "verify_rodit_isamatch",
+      componentCount: own_provider_components.length,
+      components: own_provider_components,
+    });
+
+    // Get blockchain and contract parts
+    const bcPart = own_provider_components.find((part) =>
+      part.startsWith("bc=")
+    );
+    const scPart = own_provider_components.find((part) =>
+      part.startsWith("sc=")
+    );
+
+    // Find all ID components
+    const idComponents = own_provider_components.filter(
+      (part) =>
+        part.startsWith("id=") &&
+        !part.startsWith("bc=") &&
+        !part.startsWith("sc=")
+    );
+
+    if (!bcPart || !scPart || idComponents.length < 1) {
+      logger.error("Invalid provider ID format", {
+        component: "verify_rodit_isamatch",
+        providerId: own_service_provider_id,
+        components: own_provider_components,
+        hasBlockchain: !!bcPart,
+        hasSmartContract: !!scPart,
+        idCount: idComponents.length,
+      });
+      return false;
+    }
+
+    // Construct the base prefix
+    const base_prefix = `${bcPart};${scPart}`;
+    logger.debug("Constructed base prefix", {
+      component: "verify_rodit_isamatch",
+      basePrefix: base_prefix,
+    });
+
+    // Try verification with each ID component
+    for (let i = 0; i < idComponents.length; i++) {
+      const idPosition = i + 1;
+      const isPartnerVerification = i === 0;
+      const verificationType = isPartnerVerification ? "PARTNER" : "PEER";
+      const signing_token_id = `${base_prefix};${idComponents[i]}`;
+
+      logger.debug(
+        `Trying ${verificationType} verification with ID [${idPosition}/${idComponents.length}]`,
+        {
+          component: "verify_rodit_isamatch",
+          idPosition,
+          verificationType,
+          totalIds: idComponents.length,
+          signingTokenId: signing_token_id,
+        }
+      );
+
+      logger.debug("Blockchain call parameters", {
+        component: "verify_rodit_isamatch",
+        signingTokenId: signing_token_id,
+        rpcUrl,
+        contractId,
+      });
+
+      const signing_rodit = await nearorg_rpc_tokenfromroditid(
+        signing_token_id,
+        rpcUrl,
+        contractId
+      );
+
+      logger.debug("Retrieved signing RODiT", {
+        component: "verify_rodit_isamatch",
+        idPosition,
+        verificationType,
+        tokenId: signing_rodit?.token_id,
+        ownerId: signing_rodit?.owner_id,
+      });
+
+      // For simplicity in the browser version, we'll just return true if we find a matching token
+      // This is a simplified version of the complex verification in the backend
+      if (signing_rodit && signing_rodit.token_id) {
+        logger.info("RODiT match verification successful", {
+          component: "verify_rodit_isamatch",
+          verificationType,
+          idPosition,
+          signingTokenId: signing_token_id,
+        });
+        return true;
+      }
+    }
+
+    logger.warn("No matching RODiT found", {
+      component: "verify_rodit_isamatch",
+      providerId: own_service_provider_id,
+    });
+    return false;
+  } catch (error) {
+    logger.error("RODiT match verification failed", {
+      component: "verify_rodit_isamatch",
+      error: {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      },
+    });
+    return false;
+  }
+}
+
+/**
  * BROWSER-SPECIFIC VERIFICATION FUNCTIONS
  * 
  * These functions provide simplified verification for browser environments
@@ -1183,125 +1319,12 @@ export class RoditAuthService {
   }
 
   async verify_rodit_isamatch(own_service_provider_id, peer_rodit) {
-    logger.debug("Starting RODiT match verification", {
-      component: "verify_rodit_isamatch",
-      ownServiceProviderId: own_service_provider_id,
-      peerRoditId: peer_rodit?.token_id,
-    });
-
-    try {
-      const own_provider_components = own_service_provider_id.split(";");
-
-      logger.debug("Split provider components", {
-        component: "verify_rodit_isamatch",
-        componentCount: own_provider_components.length,
-        components: own_provider_components,
-      });
-
-      // Get blockchain and contract parts
-      const bcPart = own_provider_components.find((part) =>
-        part.startsWith("bc=")
-      );
-      const scPart = own_provider_components.find((part) =>
-        part.startsWith("sc=")
-      );
-
-      // Find all ID components
-      const idComponents = own_provider_components.filter(
-        (part) =>
-          part.startsWith("id=") &&
-          !part.startsWith("bc=") &&
-          !part.startsWith("sc=")
-      );
-
-      if (!bcPart || !scPart || idComponents.length < 1) {
-        logger.error("Invalid provider ID format", {
-          component: "verify_rodit_isamatch",
-          providerId: own_service_provider_id,
-          components: own_provider_components,
-          hasBlockchain: !!bcPart,
-          hasSmartContract: !!scPart,
-          idCount: idComponents.length,
-        });
-        return false;
-      }
-
-      // Construct the base prefix
-      const base_prefix = `${bcPart};${scPart}`;
-      logger.debug("Constructed base prefix", {
-        component: "verify_rodit_isamatch",
-        basePrefix: base_prefix,
-      });
-
-      // Try verification with each ID component
-      for (let i = 0; i < idComponents.length; i++) {
-        const idPosition = i + 1;
-        const isPartnerVerification = i === 0;
-        const isPeerVerification = i > 0;
-        const verificationType = isPartnerVerification ? "PARTNER" : "PEER";
-        const signing_token_id = `${base_prefix};${idComponents[i]}`;
-
-        logger.debug(
-          `Trying ${verificationType} verification with ID [${idPosition}/${idComponents.length}]`,
-          {
-            component: "verify_rodit_isamatch",
-            idPosition,
-            verificationType,
-            totalIds: idComponents.length,
-            signingTokenId: signing_token_id,
-          }
-        );
-
-        logger.debug("Blockchain call parameters", {
-          component: "verify_rodit_isamatch",
-          signingTokenId: signing_token_id,
-          rpcUrl: this.rpcUrl,
-          contractId: this.contractId,
-        });
-
-        const signing_rodit = await nearorg_rpc_tokenfromroditid(
-          signing_token_id,
-          this.rpcUrl,
-          this.contractId
-        );
-
-        logger.debug("Retrieved signing RODiT", {
-          component: "verify_rodit_isamatch",
-          idPosition,
-          verificationType,
-          tokenId: signing_rodit?.token_id,
-          ownerId: signing_rodit?.owner_id,
-        });
-
-        // For simplicity in the browser version, we'll just return true if we find a matching token
-        // This is a simplified version of the complex verification in the backend
-        if (signing_rodit && signing_rodit.token_id) {
-          logger.info("RODiT match verification successful", {
-            component: "verify_rodit_isamatch",
-            verificationType,
-            idPosition,
-            signingTokenId: signing_token_id,
-          });
-          return true;
-        }
-      }
-
-      logger.warn("No matching RODiT found", {
-        component: "verify_rodit_isamatch",
-        providerId: own_service_provider_id,
-      });
-      return false;
-    } catch (error) {
-      logger.error("RODiT match verification failed", {
-        component: "verify_rodit_isamatch",
-        error: {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        },
-      });
-      return false;
-    }
+    return verify_rodit_isamatch(
+      own_service_provider_id,
+      peer_rodit,
+      this.rpcUrl,
+      this.contractId
+    );
   }
 
   async validate_jwt_token_fe(token, rodit_id) {
