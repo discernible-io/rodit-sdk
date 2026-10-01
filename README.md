@@ -104,3 +104,13 @@ npx @rodit/verify-hola report "HOLA/MUNDO/..."
 ---
 
 [discernible.io](https://www.discernible.io) · [identyclaw-agents](https://github.com/discernible-io/identyclaw-agents) · [discernible-io](https://github.com/discernible-io)
+
+<!-- discernible-io:product-links -->
+## Links
+
+Maintained by [Discernible](https://www.discernible.io/).
+
+- **Product:** [discernible.io](https://www.discernible.io/)
+- **Get a Passport:** [purchase.identyclaw.com](https://purchase.identyclaw.com) (buy once — no subscription)
+- **Verify HOLA:** [verify.identyclaw.com](https://verify.identyclaw.com)
+<!-- /discernible-io:product-links -->
