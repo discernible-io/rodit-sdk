@@ -46,3 +46,32 @@ test("package exports include ./chain subpath", () => {
   assert.strictEqual(pkg.exports["."], "./index.js");
   assert.strictEqual(pkg.exports["./chain"], "./chain.js");
 });
+
+test("chain blockchain helpers do not pull utils.js (Metro/crypto)", () => {
+  const root = path.join(__dirname, "..");
+  const blockchain = fs.readFileSync(
+    path.join(root, "lib/blockchain/blockchainservice.js"),
+    "utf8"
+  );
+  assert.doesNotMatch(
+    blockchain,
+    /require\(["']\.\.\/\.\.\/utils["']\)/,
+    "blockchainservice must not require utils.js (Node crypto via debug logs)"
+  );
+  assert.doesNotMatch(
+    blockchain,
+    /require\(["']crypto["']\)|require\(["']node:crypto["']\)/,
+    "blockchainservice must not require Node crypto"
+  );
+
+  // Strip comments so prose mentioning crypto does not false-positive.
+  const utilsSrc = fs
+    .readFileSync(path.join(root, "utils.js"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/.*$/gm, "");
+  assert.doesNotMatch(
+    utilsSrc,
+    /require\(['"]crypto['"]\)|require\(['"]node:crypto['"]\)/,
+    "utils.js must not statically require Node crypto for Metro"
+  );
+});

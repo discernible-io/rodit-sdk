@@ -48,6 +48,8 @@ import {
 
 Hermes does not provide a global `Buffer`. Blockchain RPC helpers use `Buffer.from(...)` for base64/hex encoding — install and load a Buffer polyfill (for example `buffer` / Expo’s Buffer setup) **before** calling those helpers.
 
+The `/chain` entry loads blockchain RPC + `verify_rodit_islive` only (logger/ulid). It does **not** load `utils.js` or Node `crypto`.
+
 ## Frontend vs Backend SDK
 
 | Feature | @rodit/rodit-auth-fe (Frontend) | @rodit/rodit-auth-be (Backend) |
@@ -453,7 +455,7 @@ REACT_APP_NEAR_RPC_URL=https://rpcnear.org
 ## Package Information
 
 - **Name**: `@rodit/rodit-auth-fe`
-- **Version**: 4.10.11
+- **Version**: 4.10.12
 - **License**: UNLICENSED
 - **Repository**: https://github.com/discernible-io/rodit-sdk/tree/main/rodit-auth-fe
 - **Node Version**: >=20.0.0

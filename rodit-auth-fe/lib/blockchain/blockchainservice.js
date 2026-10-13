@@ -4,9 +4,9 @@
  */
 
 const { ulid } = require("ulid");
-const { logger, createLogContext } = require("../../services/logger");
-const utils = require("../../utils");
-// Use process.env directly instead of config module
+const { logger } = require("../../services/logger");
+// Use process.env directly instead of config module.
+// Do not import utils.js here — it pulls Node `crypto` (debug-only) and breaks Metro/RN for /chain.
 
 /**
  * Constants and Configuration

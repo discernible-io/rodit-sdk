@@ -64,11 +64,33 @@ function logServerBufferState(stage, data, logger, requestId) {
     length: data?.length || 0,
     // Only log buffer presence and length, not content
     hasData: data instanceof Uint8Array || Buffer.isBuffer(data) ? true : false,
-    // For debugging, log only a hash of the buffer content instead of actual data
-    contentHash: data instanceof Uint8Array || Buffer.isBuffer(data) 
-      ? require('crypto').createHash('sha256').update(Buffer.from(data)).digest('hex').substring(0, 8) 
-      : null
+    // For debugging, log only a hash of the buffer content instead of actual data.
+    // Never statically load Node crypto — Metro/RN refuse it even for unused debug fields.
+    contentHash: safeDebugContentHash(data),
   });
+}
+
+/**
+ * Optional short content hash for debug logs. No-ops outside Node (no crypto shim required).
+ * @param {Buffer|Uint8Array|any} data
+ * @returns {string|null}
+ */
+function safeDebugContentHash(data) {
+  if (!(data instanceof Uint8Array || Buffer.isBuffer(data))) return null;
+  try {
+    if (typeof process === "undefined" || !process.versions?.node) return null;
+    // Avoid a static crypto require literal — Metro treats that as a hard native dep.
+    const req = typeof require === "function" ? require : null;
+    const nodeCrypto = req ? req("node:" + "crypto") : null;
+    if (!nodeCrypto?.createHash) return null;
+    return nodeCrypto
+      .createHash("sha256")
+      .update(Buffer.from(data))
+      .digest("hex")
+      .substring(0, 8);
+  } catch {
+    return null;
+  }
 }
 
 /**
