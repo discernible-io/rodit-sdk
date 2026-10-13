@@ -1,12 +1,16 @@
 {
   "name": "@rodit/rodit-auth-fe",
-  "version": "4.10.10",
+  "version": "4.10.11",
   "description": "JavaScript sdk for interacting with RODiT authentication and API services",
   "main": "index.js",
   "browser": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./chain": "./chain.js"
+  },
   "scripts": {
     "build": "echo 'SDK build complete - no build step required for this package'",
-    "test": "node --test test/",
+    "test": "node --test test/*.cjs",
     "lint": "eslint .",
     "docs": "jsdoc -c jsdoc.json"
   },
@@ -32,6 +36,7 @@
   },
   "files": [
     "index.js",
+    "chain.js",
     "utils.js",
     "lib/**/*.js",
     "frontend/**/*.js",

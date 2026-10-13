@@ -34,6 +34,20 @@ This SDK is designed for **browser environments only** and provides:
 npm install @rodit/rodit-auth-fe
 ```
 
+### React Native / Expo (chain subpath)
+
+For RPC ownership lookups and live checks without loading the browser wallet frontend (`frontend/rodit_fe.js`), import the `./chain` subpath:
+
+```javascript
+import {
+  nearorg_rpc_tokensfromaccountid,
+  verify_rodit_islive,
+  RODiT,
+} from '@rodit/rodit-auth-fe/chain';
+```
+
+Hermes does not provide a global `Buffer`. Blockchain RPC helpers use `Buffer.from(...)` for base64/hex encoding — install and load a Buffer polyfill (for example `buffer` / Expo’s Buffer setup) **before** calling those helpers.
+
 ## Frontend vs Backend SDK
 
 | Feature | @rodit/rodit-auth-fe (Frontend) | @rodit/rodit-auth-be (Backend) |
@@ -232,11 +246,28 @@ Browser-compatible check for RODiT activity status (DNS checks skipped).
 
 Fetches and verifies a peer RODiT token from the blockchain.
 
-### Blockchain Models
+### Blockchain Models & RPC
 
 ```javascript
-import { CONSTANTS, RODiT } from '@rodit/rodit-auth-fe';
+import {
+  CONSTANTS,
+  RODiT,
+  nearorg_rpc_tokensfromaccountid,
+} from '@rodit/rodit-auth-fe';
+
+// Mobile / Node-safe (skips frontend/rodit_fe.js):
+import {
+  nearorg_rpc_tokensfromaccountid,
+  nearorg_rpc_fetchpublickeybytes,
+  verify_rodit_islive,
+  RODiT,
+  CONSTANTS,
+} from '@rodit/rodit-auth-fe/chain';
 ```
+
+#### `nearorg_rpc_tokensfromaccountid(account_id, rpcUrl, contractId)`
+
+Fetches the first RODiT token for a NEAR account via `rodit_tokens_for_owner`. Same implementation as the deep `lib/blockchain/blockchainservice.js` path (including `Buffer.from(args).toString("base64")` for RPC args).
 
 #### `RODiT` Class
 
@@ -422,7 +453,7 @@ REACT_APP_NEAR_RPC_URL=https://rpcnear.org
 ## Package Information
 
 - **Name**: `@rodit/rodit-auth-fe`
-- **Version**: 3.0.6
+- **Version**: 4.10.11
 - **License**: UNLICENSED
 - **Repository**: https://github.com/discernible-io/rodit-sdk/tree/main/rodit-auth-fe
 - **Node Version**: >=20.0.0

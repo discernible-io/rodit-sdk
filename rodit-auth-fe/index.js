@@ -58,5 +58,6 @@ export {
 // Export blockchain services
 export {
   CONSTANTS,
-  RODiT
+  RODiT,
+  nearorg_rpc_tokensfromaccountid,
 } from './lib/blockchain/blockchainservice.js';
