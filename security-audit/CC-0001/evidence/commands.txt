@@ -1,0 +1,22 @@
+# CC-0001 validation commands (2026-10-20)
+
+./sandbox/scripts/up.sh
+
+docker compose -f sandbox/docker-compose.yml exec -T codecome-sandbox bash -lc \
+  'cd /workspace && node itemdb/evidence/CC-0001/validate-login-replay-properties.mjs'
+
+docker compose -f sandbox/docker-compose.yml exec -T codecome-sandbox bash -lc \
+  'cd /workspace/src/rodit-sdk/rodit-auth-be && node -e "
+const auth = require(\"./lib/auth/authentication\");
+(async () => {
+  const oldTs = Math.floor(Date.now()/1000) - 86400*400;
+  const ok = await auth.validateTimestamp(oldTs, 300);
+  console.log(\"old_timestamp_accepted:\", ok);
+})();"'
+
+docker compose -f sandbox/docker-compose.yml exec -T codecome-sandbox bash -lc \
+  'cd /workspace/src/rodit-sdk/rodit-auth-be && node -e "
+const { tryConsumeLoginNonce, clearLoginNonceReplayCacheForTests } = require(\"./lib/auth/login-nonce\");
+clearLoginNonceReplayCacheForTests();
+console.log(tryConsumeLoginNonce(\"x\", null), tryConsumeLoginNonce(\"x\", null));
+"'

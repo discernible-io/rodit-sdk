@@ -27,6 +27,7 @@ const {
   buildLoginSigningMessageBytes,
   tryConsumeLoginNonce,
 } = require("./login-nonce");
+const config = require("../../services/configsdk");
 
 async function verify_rodit_ownership(
     peerroditid,
@@ -730,17 +731,26 @@ async function verify_rodit_ownership(
   }
 
   /**
-   * Validates that a timestamp is not in the future
-   * 
+   * Validates that a login challenge timestamp is within skew and max-age bounds.
+   *
    * @param {number} timestamp - Unix timestamp in seconds
-   * @param {number} maxAgeSeconds - Maximum age in seconds (not used, kept for backward compatibility)
+   * @param {number} [maxAgeSeconds] - Maximum challenge age in seconds (defaults to API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE)
    * @returns {Promise<boolean>} True if timestamp is valid, false otherwise
    */
-  async function validateTimestamp(timestamp, maxAgeSeconds = 300) {
+  async function validateTimestamp(timestamp, maxAgeSeconds) {
     const requestId = ulid();
     const currentTime = Math.floor(Date.now() / 1000);
     const timeDifference = currentTime - timestamp;
-    
+    const configuredMaxAge = Number(
+      config.get("API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE", 300)
+    );
+    const resolvedMaxAge =
+      Number.isFinite(maxAgeSeconds) && maxAgeSeconds > 0
+        ? maxAgeSeconds
+        : Number.isFinite(configuredMaxAge) && configuredMaxAge > 0
+          ? configuredMaxAge
+          : 300;
+
     // Check if timestamp is in the future (with small buffer for clock skew)
     if (timestamp > currentTime + 30) {
       logger.warn("Authentication rejected: timestamp is in the future", {
@@ -753,10 +763,20 @@ async function verify_rodit_ownership(
       });
       return false;
     }
-    
-    // We've removed the timestamp age check as it's not needed with our comprehensive validation system
-    // The system already validates tokens through other means
-    
+
+    if (timeDifference > resolvedMaxAge) {
+      logger.warn("Authentication rejected: timestamp too old", {
+        component: "RoditAuth",
+        method: "validateTimestamp",
+        requestId,
+        timestamp,
+        currentTime,
+        maxAgeSeconds: resolvedMaxAge,
+        ageSeconds: timeDifference,
+      });
+      return false;
+    }
+
     return true;
   }
 
@@ -833,7 +853,13 @@ async function verify_rodit_ownership(
     });
 
     try {
-      const timestampValid = await validateTimestamp(peertimestamp);
+      const timestampMaxAge = Number(
+        config.get("API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE", 300)
+      );
+      const timestampValid = await validateTimestamp(
+        peertimestamp,
+        timestampMaxAge
+      );
 
       if (!timestampValid) {
         logger.warn("Invalid timestamp, aborting RODiT verification", {
@@ -843,13 +869,14 @@ async function verify_rodit_ownership(
           roditId: peerroditid,
           timestamp: peertimestamp,
           currentTime: Math.floor(Date.now() / 1000),
+          maxAgeSeconds: timestampMaxAge,
         });
         return {
           peer_rodit: null,
           goodrodit: false,
           failureReason: "LOGIN_CHALLENGE_TIMESTAMP_INVALID",
           failureMessage:
-            "Login challenge timestamp invalid: the Unix `timestamp` from your POST body is too far in the future relative to server time (use the `timestamp` from the same GET /api/login/timestamp response as your login signing payload; check clock skew)."
+            "Login challenge timestamp invalid: the Unix `timestamp` from your POST body is too far in the future or older than the allowed max age relative to server time (use a fresh `timestamp` from GET /api/login/timestamp for the same login signing payload; check clock skew)."
         };
       }
 

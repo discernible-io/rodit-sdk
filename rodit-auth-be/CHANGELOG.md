@@ -2,6 +2,15 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [9.17.1] — 2026-10-20
+
+### Fixed
+
+- **Login challenge max-age:** `validateTimestamp` again rejects challenges older
+  than `API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE` (default 300s). Stale captured
+  `POST /api/login` bodies can no longer mint session JWTs indefinitely.
+  `verify_peer_rodit` passes the configured max age into the check.
+
 ## [9.17.0] — 2026-10-06
 
 ### Fixed

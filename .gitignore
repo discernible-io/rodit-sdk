@@ -46,3 +46,8 @@ Thumbs.db
 
 # Generated docs
 docs/
+
+# CodeCome audit: keep reports visible; hide exploit PoCs / captures / symlinks
+security-audit/**/exploits
+security-audit/**/evidence-codecome
+security-audit/**/evidence/output.txt
