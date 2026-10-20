@@ -2,7 +2,7 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
-## [9.17.1] — 2026-10-20
+## [9.17.2] — 2026-10-20
 
 ### Fixed
 
@@ -10,6 +10,12 @@ All notable changes to `@rodit/rodit-auth-be` are documented here.
   than `API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE` (default 300s). Stale captured
   `POST /api/login` bodies can no longer mint session JWTs indefinitely.
   `verify_peer_rodit` passes the configured max age into the check.
+
+## [9.17.1] — 2026-10-20
+
+### Note
+
+- Version number reserved/staged on npm but not publicly released; use **9.17.2**.
 
 ## [9.17.0] — 2026-10-06
 
