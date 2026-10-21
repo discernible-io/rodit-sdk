@@ -4,7 +4,7 @@ Node.js / Express SDK for RODiT-based mutual authentication, authorization, sess
 
 **npm:** [https://www.npmjs.com/package/@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be)  
 **Monorepo:** [discernible-io/rodit-sdk](https://github.com/discernible-io/rodit-sdk) (this directory)  
-**Version:** 9.17.2 · **License:** Proprietary · **Author:** Discernible IO
+**Version:** 9.17.3 · **License:** Proprietary · **Author:** Discernible IO
 
 ## Production deployments
 
@@ -18,7 +18,7 @@ This package is the server runtime behind RODiT-powered APIs, including:
 
 Browser and wallet clients for these APIs use the companion package [`@rodit/rodit-auth-fe`](https://www.npmjs.com/package/@rodit/rodit-auth-fe).
 
-**Login `POST` /api/login:** Use **`accountid`** (or **`roditid`**), **`timestamp`**, and **`base64url_signature`**. Sign UTF-8 bytes of `identifier + timestamp_iso`, and reject deprecated keys such as **`signature`** and **`account_id`**. See [CHANGELOG.md](./CHANGELOG.md).
+**Login `POST` /api/login:** Use **`accountid`** (or **`roditid`**), exactly one of **`timestamp`** or **`timestamp_iso`**, and **`base64url_signature`**. Sign UTF-8 bytes of `identifier + timestamp_iso`, and reject deprecated keys such as **`signature`** and **`account_id`**. See [CHANGELOG.md](./CHANGELOG.md).
 
 **9.15.0:** Outbound `send_webhook` SSRF controls (private/metadata blocklist, `webhook_cidr` enforcement, DNS pin); login success exposes verified peer id as JSON `roditid` and `req.authenticatedRoditId`; optional `enforceRateLimitFromClaims()` for per-route claim quotas. See [CHANGELOG.md](./CHANGELOG.md).
 

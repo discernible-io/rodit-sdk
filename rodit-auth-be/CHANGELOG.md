@@ -2,6 +2,16 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [9.17.3] — 2026-10-21
+
+### Changed
+
+- **`login_client` / `POST /api/login` timestamp body:** accepts exactly one of
+  Unix-seconds `timestamp` or canonical `timestamp_iso` from the same
+  `GET /api/login/timestamp` challenge (rejects both / neither / non-canonical
+  ISO). Hosts no longer need an app-level rewrite before `login_client`.
+  Error codes: `LOGIN_TIMESTAMP_AMBIGUOUS`, `INVALID_LOGIN_TIMESTAMP`.
+
 ## [9.17.2] — 2026-10-20
 
 ### Fixed
