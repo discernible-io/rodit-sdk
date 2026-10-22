@@ -1,0 +1,4 @@
+title = "rodit-sdk gitleaks config"
+
+[extend]
+useDefault = true
