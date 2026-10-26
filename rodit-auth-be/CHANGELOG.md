@@ -2,7 +2,7 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
-## [9.17.3] — 2026-10-21
+## [9.17.4] — 2026-10-21
 
 ### Changed
 
@@ -11,6 +11,12 @@ All notable changes to `@rodit/rodit-auth-be` are documented here.
   `GET /api/login/timestamp` challenge (rejects both / neither / non-canonical
   ISO). Hosts no longer need an app-level rewrite before `login_client`.
   Error codes: `LOGIN_TIMESTAMP_AMBIGUOUS`, `INVALID_LOGIN_TIMESTAMP`.
+
+## [9.17.3] — 2026-10-21
+
+### Note
+
+- Version number reserved/staged on npm but not publicly released; use **9.17.4**.
 
 ## [9.17.2] — 2026-10-20
 

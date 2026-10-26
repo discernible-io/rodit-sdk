@@ -1,21 +1,43 @@
 #!/usr/bin/env bash
 set -u
 
-DEFAULT_PACKAGE_NAMES="@rodit/rodit-auth-be @rodit/rodit-auth-fe @rodit/verify-hola"
-PACKAGE_NAMES="${PACKAGE_NAMES:-${PACKAGE_NAME:-$DEFAULT_PACKAGE_NAMES}}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 REGISTRY="${REGISTRY:-https://registry.npmjs.org/}"
 MODE="dry-run"
 INCLUDE_LATEST="false"
 otp=""
 
+# Discover publishable package names from every package.json in the monorepo
+# (skips private packages and nested node_modules).
+discover_repo_package_names() {
+  find "$REPO_ROOT" \
+    -name package.json \
+    -not -path '*/node_modules/*' \
+    -print0 |
+    while IFS= read -r -d '' package_json; do
+      node -e '
+const fs = require("fs");
+const pkg = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+if (pkg.name && pkg.private !== true) {
+  process.stdout.write(String(pkg.name) + "\n");
+}
+' "$package_json"
+    done | sort -u | tr '\n' ' ' | sed 's/[[:space:]]*$//'
+}
+
+DEFAULT_PACKAGE_NAMES="$(discover_repo_package_names)"
+PACKAGE_NAMES="${PACKAGE_NAMES:-${PACKAGE_NAME:-$DEFAULT_PACKAGE_NAMES}}"
+
 usage() {
-  cat <<'USAGE'
+  cat <<USAGE
 Usage:
   scripts/unpublish-old-versions.sh [--execute] [--all]
 
 Environment:
   PACKAGE_NAMES  Space-separated packages to unpublish old versions from
-                 (default: @rodit/rodit-auth-be @rodit/rodit-auth-fe @rodit/verify-hola)
+                 (default: auto-discovered from repo package.json files:
+                  ${DEFAULT_PACKAGE_NAMES:-<none found>})
   PACKAGE_NAME   Single package override for backwards compatibility
   REGISTRY       npm registry URL (default: https://registry.npmjs.org/)
 
@@ -108,10 +130,19 @@ fi
 process_package() {
   package_name="$1"
 
-  metadata_json="$(npm view "$package_name" version versions dist-tags --json --registry "$REGISTRY")" || {
+  view_output=""
+  if ! view_output="$(npm view "$package_name" version versions dist-tags --json --registry "$REGISTRY" 2>&1)"; then
+    if printf '%s' "$view_output" | grep -qE 'E404|404 Not Found|is not in this registry'; then
+      echo "Package: $package_name"
+      echo "Registry: $REGISTRY"
+      echo "Not on registry (already unpublished or never published); skipping."
+      return 0
+    fi
+    printf '%s\n' "$view_output" >&2
     echo "Failed to fetch npm metadata for $package_name" >&2
     return 1
-  }
+  fi
+  metadata_json="$view_output"
 
   latest_version="$(printf '%s' "$metadata_json" | node -e '
 const metadata = JSON.parse(require("fs").readFileSync(0, "utf8"));
