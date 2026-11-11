@@ -10,20 +10,66 @@ otp=""
 
 # Discover publishable package names from every package.json in the monorepo
 # (skips private packages and nested node_modules).
+# Order: monorepo dependents before their dependencies (e.g. verify-hola
+# before rodit-auth-be) so older consumer versions can be cleared first.
 discover_repo_package_names() {
   find "$REPO_ROOT" \
     -name package.json \
     -not -path '*/node_modules/*' \
     -print0 |
-    while IFS= read -r -d '' package_json; do
-      node -e '
+    node -e '
 const fs = require("fs");
-const pkg = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-if (pkg.name && pkg.private !== true) {
-  process.stdout.write(String(pkg.name) + "\n");
-}
-' "$package_json"
-    done | sort -u | tr '\n' ' ' | sed 's/[[:space:]]*$//'
+const chunks = [];
+process.stdin.on("data", (c) => chunks.push(c));
+process.stdin.on("end", () => {
+  const raw = Buffer.concat(chunks).toString("utf8");
+  const paths = raw.split("\0").filter(Boolean);
+  const pkgs = [];
+  for (const packageJson of paths) {
+    let pkg;
+    try {
+      pkg = JSON.parse(fs.readFileSync(packageJson, "utf8"));
+    } catch {
+      continue;
+    }
+    if (!pkg.name || pkg.private === true) continue;
+    const deps = {
+      ...(pkg.dependencies || {}),
+      ...(pkg.peerDependencies || {}),
+      ...(pkg.optionalDependencies || {}),
+    };
+    pkgs.push({ name: String(pkg.name), deps });
+  }
+  const byName = new Map();
+  for (const p of pkgs) byName.set(p.name, p);
+  const names = [...byName.keys()];
+  const nameSet = new Set(names);
+  const inSetDeps = new Map(
+    names.map((name) => [
+      name,
+      Object.keys(byName.get(name).deps).filter((d) => nameSet.has(d)),
+    ])
+  );
+  const depthMemo = new Map();
+  function depth(name, stack = new Set()) {
+    if (depthMemo.has(name)) return depthMemo.get(name);
+    if (stack.has(name)) return 0;
+    stack.add(name);
+    const ds = inSetDeps.get(name) || [];
+    const d = ds.length
+      ? 1 + Math.max(...ds.map((dep) => depth(dep, stack)))
+      : 0;
+    stack.delete(name);
+    depthMemo.set(name, d);
+    return d;
+  }
+  names.sort((a, b) => {
+    const dd = depth(b) - depth(a);
+    return dd !== 0 ? dd : a.localeCompare(b);
+  });
+  process.stdout.write(names.join(" "));
+});
+'
 }
 
 DEFAULT_PACKAGE_NAMES="$(discover_repo_package_names)"
