@@ -1848,9 +1848,3 @@ export async function verifyRoditBeforeMinting(Metadata, SignerPublicKey, type) 
 // Export all necessary functions and services
 export default RoditAuthService;
 
-// Export crypto utilities for use in other modules
-export const cryptoUtils = {
-  nacl,
-  encodeBase64,
-  Buffer
-};

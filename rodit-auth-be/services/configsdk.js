@@ -331,8 +331,14 @@ function get(pathStr, defaultValue) {
   return getResolved(pathStr, defaultValue).value;
 }
 
+/**
+ * Merged view of FALLBACK_DEFAULTS overlaid with host node-config (if present).
+ * Consumers: idclawserver-idc, lastcradle-be, slcbackend-slc startup config snapshots
+ * via `require('@rodit/rodit-auth-be').config.getAllMerged()`.
+ *
+ * @returns {Object}
+ */
 function getAllMerged() {
-  // Returns a merged view: node config (if any) overlaid onto fallbacks
   let merged = { ...FALLBACK_DEFAULTS };
   if (nodeConfig && typeof nodeConfig.util?.toObject === "function") {
     try {

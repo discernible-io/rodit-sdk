@@ -135,17 +135,6 @@ function extractLoginBase64UrlSignature(body) {
   return fromNew || fromLegacy;
 }
 
-function parseRequiredLoginTimestamp(rawTimestamp) {
-  if (rawTimestamp === undefined || rawTimestamp === null || rawTimestamp === "") {
-    return null;
-  }
-  const parsed = Number(rawTimestamp);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-  return parsed;
-}
-
 function loginBodyFieldPresent(value) {
   if (value === undefined || value === null) {
     return false;

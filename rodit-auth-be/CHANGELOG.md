@@ -2,6 +2,15 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [10.0.1] — 2026-11-11
+
+### Removed
+
+- Dead / unreachable code with no in-repo or named consumer callers: root `utils.js`,
+  performance middleware example modules, unused env helpers, unused `services/utils`
+  helpers, and `nearorg_rpc_listpublicagents`.
+- Kept `config.getAllMerged` (startup snapshots in idclawserver / lastcradle / slc).
+
 ## [10.0.0] — 2026-11-11
 
 ### Fixed
