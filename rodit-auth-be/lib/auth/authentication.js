@@ -827,16 +827,24 @@ async function verify_rodit_ownership(
    * @param {number} peertimestamp - Unix seconds
    * @param {string} peerroditid_base64url_signature - base64url Ed25519 signature
    * @param {string|null} [peerNonce=null] - Optional login challenge nonce; when set, bound into signature and single-use
+   * @param {object} [options={}] - Verification options
+   * @param {boolean} [options.enforceLoginChallengeTimestamp=true] - When true (default),
+   *   reject peertimestamp outside login-challenge skew/max-age (`TIMESTAMP_MAX_AGE`).
+   *   Set false for post-issuance bearer re-verification of JWT `iat` + `rodit_idsignature`
+   *   (JWT/session expiry remain the freshness controls).
    */
   async function verify_peer_rodit(
     peer_rodit,
     peerroditid,
     peertimestamp,
     peerroditid_base64url_signature,
-    peerNonce = null
+    peerNonce = null,
+    options = {}
   ) {
     const requestId = ulid();
     const startTime = Date.now();
+    const enforceLoginChallengeTimestamp =
+      options.enforceLoginChallengeTimestamp !== false;
 
     const config_own_rodit = await stateManager.getConfigOwnRodit();
 
@@ -847,45 +855,56 @@ async function verify_rodit_ownership(
       peerRoditId: peerroditid,
       timestamp: peertimestamp,
       hasNonce: !!peerNonce,
+      enforceLoginChallengeTimestamp,
       signatureLength: peerroditid_base64url_signature?.length,
       hasOwnRodit: !!config_own_rodit,
       ownRoditId: config_own_rodit?.token_id,
     });
 
     try {
-      const timestampMaxAge = Number(
-        config.get("API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE", 300)
-      );
-      const timestampValid = await validateTimestamp(
-        peertimestamp,
-        timestampMaxAge
-      );
+      if (enforceLoginChallengeTimestamp) {
+        const timestampMaxAge = Number(
+          config.get("API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE", 300)
+        );
+        const timestampValid = await validateTimestamp(
+          peertimestamp,
+          timestampMaxAge
+        );
 
-      if (!timestampValid) {
-        logger.warn("Invalid timestamp, aborting RODiT verification", {
+        if (!timestampValid) {
+          logger.warn("Invalid timestamp, aborting RODiT verification", {
+            component: "RoditAuth",
+            method: "verify_peer_rodit",
+            requestId,
+            roditId: peerroditid,
+            timestamp: peertimestamp,
+            currentTime: Math.floor(Date.now() / 1000),
+            maxAgeSeconds: timestampMaxAge,
+          });
+          return {
+            peer_rodit: null,
+            goodrodit: false,
+            failureReason: "LOGIN_CHALLENGE_TIMESTAMP_INVALID",
+            failureMessage:
+              "Login challenge timestamp invalid: the Unix `timestamp` from your POST body is too far in the future or older than the allowed max age relative to server time (use a fresh `timestamp` from GET /api/login/timestamp for the same login signing payload; check clock skew)."
+          };
+        }
+
+        logger.debug("Timestamp validation ok", {
           component: "RoditAuth",
           method: "verify_peer_rodit",
           requestId,
-          roditId: peerroditid,
+          timestamp: peertimestamp
+        });
+      } else {
+        logger.debug("Skipping login-challenge timestamp max-age for bearer re-verification", {
+          component: "RoditAuth",
+          method: "verify_peer_rodit",
+          requestId,
           timestamp: peertimestamp,
           currentTime: Math.floor(Date.now() / 1000),
-          maxAgeSeconds: timestampMaxAge,
         });
-        return {
-          peer_rodit: null,
-          goodrodit: false,
-          failureReason: "LOGIN_CHALLENGE_TIMESTAMP_INVALID",
-          failureMessage:
-            "Login challenge timestamp invalid: the Unix `timestamp` from your POST body is too far in the future or older than the allowed max age relative to server time (use a fresh `timestamp` from GET /api/login/timestamp for the same login signing payload; check clock skew)."
-        };
       }
-
-      logger.debug("Timestamp validation ok", {
-        component: "RoditAuth",
-        method: "verify_peer_rodit",
-        requestId,
-        timestamp: peertimestamp
-      });
 
       logger.debug("Peer RODiT resolved for verification", {
         requestId,

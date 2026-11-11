@@ -2,6 +2,18 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [10.0.0] — 2026-11-11
+
+### Fixed
+
+- **Bearer JWT peer re-verification vs login challenge max-age:**
+  `validate_jwt_token_be` no longer re-applies `API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE`
+  (default 300s) to JWT `iat` when calling `verify_peer_rodit`. Login challenges still
+  enforce that window; bearer freshness remains JWT `exp`/`nbf` plus session
+  `session_exp` / status. Ownership proof via `iat` + `rodit_idsignature` is unchanged.
+  New option: `verify_peer_rodit(..., peerNonce, { enforceLoginChallengeTimestamp })`
+  (default `true`; JWT validation passes `false`).
+
 ## [9.17.4] — 2026-10-21
 
 ### Changed
