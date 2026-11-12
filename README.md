@@ -2,12 +2,12 @@
 
 Source for the npm packages that power [**RODiT**](https://www.discernible.io)-based APIs: blockchain-verified identity, mutual authentication, JWT sessions, route permissions, webhooks, and federated login across sibling APIs in the same token family.
 
-| Package | Directory | npm | Role |
-|---------|-----------|-----|------|
-| [@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be) | [rodit-auth-be/](rodit-auth-be/) | [npm](https://www.npmjs.com/package/@rodit/rodit-auth-be) | Node.js / Express server SDK — login, JWT, permissions, webhooks |
-| [@rodit/rodit-auth-fe](https://www.npmjs.com/package/@rodit/rodit-auth-fe) | [rodit-auth-fe/](rodit-auth-fe/) | [npm](https://www.npmjs.com/package/@rodit/rodit-auth-fe) | Browser / NEP-413 client SDK |
-| @rodit/hola-client | [hola-client/](hola-client/) | [npm](https://www.npmjs.com/package/@rodit/hola-client) | Create / sign HOLA lines (nonce + Ed25519 + checksum) |
-| @rodit/verify-hola | [verify-hola/](verify-hola/) | [npm](https://www.npmjs.com/package/@rodit/verify-hola) | Verify-before-execute HOLA CLI & library |
+| Package | Directory | Version | Role |
+|---------|-----------|---------|------|
+| [@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be) | [rodit-auth-be/](rodit-auth-be/) | **10.0.2** | Node.js / Express server SDK — login, JWT, permissions, webhooks |
+| [@rodit/rodit-auth-fe](https://www.npmjs.com/package/@rodit/rodit-auth-fe) | [rodit-auth-fe/](rodit-auth-fe/) | **4.10.14** | Browser / NEP-413 client SDK |
+| [@rodit/hola-client](https://www.npmjs.com/package/@rodit/hola-client) | [hola-client/](hola-client/) | **0.1.0** | Create / sign HOLA lines (nonce + Ed25519 + checksum) |
+| [@rodit/verify-hola](https://www.npmjs.com/package/@rodit/verify-hola) | [verify-hola/](verify-hola/) | **0.1.6** | Verify-before-execute HOLA CLI & library |
 
 ## What is RODiT?
 
@@ -72,6 +72,7 @@ No IdentyClaw API in the verify path — your machine reads chain state via Fast
 ```bash
 export NEAR_RPC_URL="https://rpc.mainnet.fastnear.com"
 export NEAR_CONTRACT_ID="genaaaa-identyclaw-com.near"
+# optional: NEAR_RPC_TIMEOUT (ms; default 5000 via rodit-auth-be)
 
 npx @rodit/verify-hola report "HOLA/MUNDO/..." --rpc \
   --canonical-peer <lemuel-gulliver-lobby-tokenId>
@@ -88,11 +89,13 @@ node verify-hola/bin/verify-hola.js report "HOLA/..." --rpc \
 
 ### Alternative: IdentyClaw API path
 
-JWT is optional — `POST /api/identity/verify` is public.
+JWT is optional — `POST /api/identity/verify` is public. Optional `IDENTYCLAW_HTTP_TIMEOUT` (ms; default 15000).
 
 ```bash
 npx @rodit/verify-hola report "HOLA/MUNDO/..."
 ```
+
+See [verify-hola/README.md](verify-hola/README.md) for the full env table.
 
 ## Package docs
 
@@ -100,6 +103,10 @@ npx @rodit/verify-hola report "HOLA/MUNDO/..."
 - [rodit-auth-fe/README.md](rodit-auth-fe/README.md) — browser SDK
 - [hola-client/README.md](hola-client/README.md) — HOLA create / sign library
 - [verify-hola/README.md](verify-hola/README.md) — HOLA verification CLI
+
+## Open work
+
+- [TODO.md](TODO.md) — backlog for this repository (includes CC-0001 login-challenge residual)
 
 ---
 

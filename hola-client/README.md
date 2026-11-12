@@ -1,5 +1,7 @@
 # @rodit/hola-client
 
+**Version:** 0.1.0
+
 Node helpers for IdentyClaw **HOLA line** construction — uppercase canonicalization, RFC 4648 base32 signatures, and mod-23 checksum.
 
 This package handles **HOLA protocol signing only**. It does **not** perform API login. You need a separate **API bearer token** (`jwt_token` from `POST /api/login`) before calling `getNonce` or `createHola`.
@@ -41,11 +43,15 @@ Peer verification: use [`@rodit/verify-hola`](../verify-hola/) (`npx @rodit/veri
 | `nearPrivateKeyToSigningSecretKey(nearPrivateKey)` | NEAR `ed25519:` key → tweetnacl secret (stays on host) |
 | `buildCanonicalPrefix(...)` | Unsigned uppercase prefix (testing) |
 | `parseHola(holaString)` | Format + checksum parse (not full trust / on-chain verify) |
+| `verify` | Deprecated alias of `parseHola` |
 | `computeHolaChecksum(prefix)` | Mod-23 checksum letter |
+| `encodeSignatureBase32`, `normalizeRecipient`, `normalizeTokenId` | Wire helpers |
+| `PROTOCOL_SUFFIX`, `HOLA_CHECKSUM_ALPHABET` | Constants |
 | `buildCollaborationEnvelope(...)` | `identyclaw.collaboration.v1` task wrapper |
-| `parseCollaborationEnvelope(input)` | Parse JSON or ` ```identyclaw ` fenced message |
+| `parseCollaborationEnvelope(input)` / `validateCollaborationEnvelope` | Parse / validate collaboration messages |
 | `formatSessionsSendMessage(envelope)` | OpenClaw `sessions_send` body with fence |
 | `assertCollaborationTrust(envelope, verifyResult)` | Trust decision after API verify |
+| `generateNearImplicitAccount`, `writeNearCredentialsFile`, … | Optional NEAR key/credential helpers |
 
 `privateKey` is a 64-byte tweetnacl Ed25519 secret key. HOLA line signatures use **base32**; API login uses **base64url** over a different message — see server login docs.
 

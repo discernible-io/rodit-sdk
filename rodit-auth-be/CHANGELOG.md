@@ -2,6 +2,19 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [10.0.2] — 2026-11-12
+
+### Changed
+
+- **NEAR RPC deadlines and fallback:** All blockchain RPC POSTs go through
+  `fetchNearRpc` with `NEAR_RPC_TIMEOUT` (default 5000ms in `FALLBACK_DEFAULTS`).
+  On timeout / network / 429 / 5xx, at most one alternate endpoint is used
+  (`FALLBACK_DEFAULTS.NEAR_RPC_URL` = `https://rpc.mainnet.fastnear.com` when
+  different from primary). The switch is logged; silent multi-retry loops removed
+  from `fetchWithRetry`.
+- **Logging cause fields:** `createLogContext` sets `operation` and `sourceId`;
+  RPC warn/error paths include `result` / `resultText` per logging-standard.
+
 ## [10.0.1] — 2026-11-11
 
 ### Removed

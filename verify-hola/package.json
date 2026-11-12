@@ -1,6 +1,6 @@
 {
   "name": "@rodit/verify-hola",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Verify HOLA lines and build passport reports via api.identyclaw.com (no JWT required for verify)",
   "license": "MIT",
   "type": "commonjs",
@@ -9,7 +9,7 @@
     "verify-hola": "bin/verify-hola.js"
   },
   "dependencies": {
-    "@rodit/rodit-auth-be": "10.0.1",
+    "@rodit/rodit-auth-be": "10.0.2",
     "hi-base32": "^0.5.1",
     "tweetnacl": "^1.0.3"
   },

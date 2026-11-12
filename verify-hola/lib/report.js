@@ -1,8 +1,34 @@
 const { parseUserSelectedDn } = require("./parse-dn");
 
 const DEFAULT_BASE = "https://api.identyclaw.com";
+const DEFAULT_HTTP_TIMEOUT_MS = 15000;
 
-async function verifyHola(hola, { baseUrl = DEFAULT_BASE, jwt, expectedRecipient, includeProfile = false } = {}) {
+function getHttpTimeoutMs(explicit) {
+  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+  const raw = process.env.IDENTYCLAW_HTTP_TIMEOUT || process.env.NEAR_RPC_TIMEOUT;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_HTTP_TIMEOUT_MS;
+}
+
+async function fetchWithDeadline(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      throw new Error(`HTTP request timed out after ${timeoutMs}ms (${url})`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function verifyHola(hola, { baseUrl = DEFAULT_BASE, jwt, expectedRecipient, includeProfile = false, timeoutMs } = {}) {
   const body = { hola };
   if (expectedRecipient) body.expectedRecipient = expectedRecipient;
   if (includeProfile) body.includeProfile = true;
@@ -10,11 +36,16 @@ async function verifyHola(hola, { baseUrl = DEFAULT_BASE, jwt, expectedRecipient
   const headers = { "Content-Type": "application/json", Accept: "application/json" };
   if (jwt) headers.Authorization = `Bearer ${jwt}`;
 
-  const res = await fetch(`${baseUrl.replace(/\/$/, "")}/api/identity/verify`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body)
-  });
+  const deadlineMs = getHttpTimeoutMs(timeoutMs);
+  const res = await fetchWithDeadline(
+    `${baseUrl.replace(/\/$/, "")}/api/identity/verify`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body)
+    },
+    deadlineMs
+  );
 
   const result = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -25,15 +56,17 @@ async function verifyHola(hola, { baseUrl = DEFAULT_BASE, jwt, expectedRecipient
   return result;
 }
 
-async function resolveDid(tokenId, { baseUrl = DEFAULT_BASE } = {}) {
+async function resolveDid(tokenId, { baseUrl = DEFAULT_BASE, timeoutMs } = {}) {
   const normalized = String(tokenId || "").trim().toLowerCase();
   if (!/^[a-z]{12}$/.test(normalized)) {
     throw new Error("tokenId must be 12 lowercase letters");
   }
 
-  const res = await fetch(
+  const deadlineMs = getHttpTimeoutMs(timeoutMs);
+  const res = await fetchWithDeadline(
     `${baseUrl.replace(/\/$/, "")}/api/mcp/resource/did:resolve:${normalized}`,
-    { headers: { Accept: "application/json" } }
+    { headers: { Accept: "application/json" } },
+    deadlineMs
   );
 
   const payload = await res.json().catch(() => ({}));

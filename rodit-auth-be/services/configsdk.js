@@ -282,6 +282,8 @@ const FALLBACK_DEFAULTS = {
     },
   },
   NEAR_RPC_URL: "https://rpc.mainnet.fastnear.com",
+  // Outbound NEAR RPC deadline (ms). Coding standard: every RPC/HTTP/chain call has a deadline.
+  NEAR_RPC_TIMEOUT: 5000,
   NEAR_CONTRACT_ID: "discernible-io.near",
   SERVICE_NAME: "service-name-not-set",
   // Runtime environment.

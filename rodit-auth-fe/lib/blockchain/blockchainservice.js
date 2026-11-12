@@ -24,6 +24,164 @@ const CONSTANTS = {
   NEAR_RPC_URL: null, // Should be passed as parameter
 };
 
+const DEFAULT_NEAR_RPC_TIMEOUT_MS = 5000;
+const DEFAULT_NEAR_RPC_ALTERNATE_URL = "https://rpc.mainnet.fastnear.com";
+
+function readEnv(key) {
+  return typeof process !== "undefined" && process.env ? process.env[key] : undefined;
+}
+
+function getNearRpcTimeoutMs(explicit) {
+  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+  const raw =
+    readEnv("REACT_APP_NEAR_RPC_TIMEOUT") ||
+    readEnv("NEAR_RPC_TIMEOUT");
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_NEAR_RPC_TIMEOUT_MS;
+}
+
+function getNearRpcAlternateUrl(primaryRpcUrl, explicit) {
+  if (explicit === null) return null;
+  if (typeof explicit === "string" && explicit) {
+    return explicit === primaryRpcUrl ? null : explicit;
+  }
+  const fromEnv =
+    readEnv("REACT_APP_NEAR_RPC_FALLBACK_URL") ||
+    readEnv("NEAR_RPC_FALLBACK_URL") ||
+    DEFAULT_NEAR_RPC_ALTERNATE_URL;
+  if (!fromEnv || fromEnv === primaryRpcUrl) return null;
+  return fromEnv;
+}
+
+function isRpcEndpointFailureStatus(status) {
+  return status === 429 || status >= 500;
+}
+
+async function fetchWithDeadline(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * One NEAR RPC POST: primary with deadline, then at most one alternate.
+ * Logs the switch with cause fields (silent fallback forbidden).
+ */
+async function fetchNearRpc(jsonBody, options = {}) {
+  const operation = options.operation || "near.rpc.fetch";
+  const requestId = options.requestId || ulid();
+  const primaryRpcUrl = options.primaryRpcUrl;
+  if (!primaryRpcUrl) {
+    throw new Error("RPC URL is required but not provided");
+  }
+  const fallbackRpcUrl = getNearRpcAlternateUrl(
+    primaryRpcUrl,
+    options.fallbackRpcUrl
+  );
+  const timeoutMs = getNearRpcTimeoutMs(options.timeoutMs);
+  const body =
+    typeof jsonBody === "string" ? jsonBody : JSON.stringify(jsonBody);
+  const candidates = [...new Set([primaryRpcUrl, fallbackRpcUrl].filter(Boolean))];
+  let lastError = null;
+
+  for (let i = 0; i < candidates.length; i++) {
+    const rpcUrl = candidates[i];
+    const usingAlternate = i > 0;
+    try {
+      const response = await fetchWithDeadline(
+        rpcUrl,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        },
+        timeoutMs
+      );
+
+      if (isRpcEndpointFailureStatus(response.status) && i < candidates.length - 1) {
+        logger.warnWithContext("NEAR RPC primary endpoint failed; trying alternate", {
+          component: "BlockchainService",
+          operation,
+          sourceId: "BlockchainService.fetchNearRpc",
+          requestId,
+          result: "source_error",
+          resultText: `HTTP ${response.status} from ${rpcUrl}`,
+          primaryRpcUrl,
+          failedRpcUrl: rpcUrl,
+          alternateRpcUrl: candidates[i + 1],
+          statusCode: response.status,
+        });
+        lastError = new Error(`NEAR RPC HTTP ${response.status} from ${rpcUrl}`);
+        continue;
+      }
+
+      if (usingAlternate) {
+        logger.warnWithContext("NEAR RPC using alternate endpoint", {
+          component: "BlockchainService",
+          operation,
+          sourceId: "BlockchainService.fetchNearRpc",
+          requestId,
+          result: "success",
+          resultText: `primary unavailable; using ${rpcUrl}`,
+          primaryRpcUrl,
+          selectedRpcUrl: rpcUrl,
+        });
+      }
+
+      return response;
+    } catch (err) {
+      const timedOut = err && err.name === "AbortError";
+      const resultText = timedOut
+        ? `deadline expired after ${timeoutMs}ms`
+        : err instanceof Error
+          ? err.message
+          : String(err);
+
+      if (i < candidates.length - 1) {
+        logger.warnWithContext("NEAR RPC primary call failed; trying alternate", {
+          component: "BlockchainService",
+          operation,
+          sourceId: "BlockchainService.fetchNearRpc",
+          requestId,
+          result: "source_error",
+          resultText,
+          primaryRpcUrl,
+          failedRpcUrl: rpcUrl,
+          alternateRpcUrl: candidates[i + 1],
+          timedOut,
+        });
+        lastError = err;
+        continue;
+      }
+
+      logger.errorWithContext("NEAR RPC call failed", {
+        component: "BlockchainService",
+        operation,
+        sourceId: "BlockchainService.fetchNearRpc",
+        requestId,
+        result: "source_error",
+        resultText,
+        rpcUrl,
+        timedOut,
+      });
+
+      if (timedOut) {
+        throw new Error(`NEAR RPC timed out after ${timeoutMs}ms (${rpcUrl})`);
+      }
+      throw err;
+    }
+  }
+
+  throw lastError || new Error("NEAR RPC call failed");
+}
+
 /**
  * Data models for RODiT authentication
  * Copyright (c) 2026 Discernible IO. All rights reserved.
@@ -116,14 +274,15 @@ async function nearorg_rpc_tokensfromaccountid(account_id, rpcUrl = null, contra
     logger.debug("Sending RPC request for account tokens", {
       component: "BlockchainService",
       method: "nearorg_rpc_tokensfromaccountid",
+      operation: "nearorg_rpc_tokensfromaccountid",
       requestId,
       rpcMethod: "rodit_tokens_for_owner",
     });
 
-    const response = await fetch(rpcUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(jsonData),
+    const response = await fetchNearRpc(jsonData, {
+      operation: "nearorg_rpc_tokensfromaccountid",
+      requestId,
+      primaryRpcUrl: rpcUrl,
     });
 
     const responseText = await response.text();
@@ -135,7 +294,11 @@ async function nearorg_rpc_tokensfromaccountid(account_id, rpcUrl = null, contra
       logger.error("WASM execution error", {
         component: "BlockchainService",
         method: "nearorg_rpc_tokensfromaccountid",
+        operation: "nearorg_rpc_tokensfromaccountid",
+        sourceId: "BlockchainService.nearorg_rpc_tokensfromaccountid",
         requestId,
+        result: "source_error",
+        resultText: String(parsedJson.result.error),
         duration,
         accountId: account_id,
         wasmError: parsedJson.result.error,
@@ -244,7 +407,11 @@ async function nearorg_rpc_tokensfromaccountid(account_id, rpcUrl = null, contra
     logger.error("Failed to fetch RODiT tokens", {
       component: "BlockchainService",
       method: "nearorg_rpc_tokensfromaccountid",
+      operation: "nearorg_rpc_tokensfromaccountid",
+      sourceId: "BlockchainService.nearorg_rpc_tokensfromaccountid",
       requestId,
+      result: "source_error",
+      resultText: error.message,
       duration,
       accountId: account_id,
       errorMessage: error.message,
@@ -393,7 +560,11 @@ async function nearorg_rpc_fetchpublickeybytes(accountId, rpcUrl = null, contrac
     logger.error("Failed to fetch public key bytes", {
       component: "BlockchainService",
       method: "nearorg_rpc_fetchpublickeybytes",
+      operation: "nearorg_rpc_fetchpublickeybytes",
+      sourceId: "BlockchainService.nearorg_rpc_fetchpublickeybytes",
       requestId,
+      result: "source_error",
+      resultText: error.message,
       accountId,
       duration,
       errorMessage: error.message,
@@ -420,4 +591,8 @@ module.exports = {
   CONSTANTS,
   nearorg_rpc_tokensfromaccountid,
   nearorg_rpc_fetchpublickeybytes,
+  fetchNearRpc,
+  fetchWithDeadline,
+  getNearRpcTimeoutMs,
+  getNearRpcAlternateUrl,
 };

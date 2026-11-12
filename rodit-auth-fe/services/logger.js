@@ -141,6 +141,9 @@ export function createLogContext(component, method, additionalContext = {}) {
   return {
     component,
     method,
+    // logging-standard cause fields (call sites may override)
+    operation: additionalContext.operation || method,
+    sourceId: additionalContext.sourceId || component,
     timestamp: new Date().toISOString(),
     requestId: additionalContext.requestId || generateId(),
     ...additionalContext,
@@ -245,6 +248,14 @@ export const logger = {
 
   infoWithContext: (message, context = {}) => {
     logger.info(message, context);
+  },
+
+  warnWithContext: (message, context = {}) => {
+    logger.warn(message, context);
+  },
+
+  debugWithContext: (message, context = {}) => {
+    logger.debug(message, context);
   },
 
   errorWithContext: (message, context = {}) => {

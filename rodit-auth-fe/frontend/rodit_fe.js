@@ -38,7 +38,8 @@ import {
 import { logger, createLogContext } from "../services/logger.js";
 import {
   CONSTANTS,
-  RODiT
+  RODiT,
+  fetchNearRpc
 } from "../lib/blockchain/blockchainservice.js";
 import { verify_rodit_islive } from "../lib/verify/verify_rodit_islive.js";
 
@@ -1595,20 +1596,24 @@ export async function nearorg_rpc_tokenfromroditid(roditid, rpcUrl = null, contr
     
     logger.debug('[nearorg_rpc_tokenfromroditid] Sending request to:', {
       component: 'nearorg_rpc_tokenfromroditid',
+      operation: 'nearorg_rpc_tokenfromroditid',
       url: finalRpcUrl,
       contractId: finalContractId,
       requestBody: JSON.stringify(json_data)
     });
     
-    const response = await fetch(finalRpcUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(json_data),
+    const response = await fetchNearRpc(json_data, {
+      operation: "nearorg_rpc_tokenfromroditid",
+      primaryRpcUrl: finalRpcUrl
     });
     
     if (!response.ok) {
       logger.error('[nearorg_rpc_tokenfromroditid] HTTP error:', {
         component: 'nearorg_rpc_tokenfromroditid',
+        operation: 'nearorg_rpc_tokenfromroditid',
+        sourceId: 'nearorg_rpc_tokenfromroditid',
+        result: 'source_error',
+        resultText: `HTTP ${response.status}`,
         status: response.status
       });
       throw new Error(`HTTP error: ${response.status}`);

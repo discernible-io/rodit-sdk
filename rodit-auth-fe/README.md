@@ -94,7 +94,7 @@ const roditAuth = new RoditAuthService(
   'https://api.example.com',           // API endpoint
   window.location.origin,              // Callback endpoint
   'your-contract.near',             // Contract ID
-  'https://rpcnear.org'       // RPC URL
+  'https://rpc.mainnet.fastnear.com' // NEAR RPC URL (or your provider)
 );
 ```
 
@@ -138,7 +138,7 @@ new RoditAuthService(wallet, apiEndpoint, callbackEndpoint, contractId, rpcUrl)
 - `apiEndpoint` - Base URL of the API server (e.g., `https://api.example.com`)
 - `callbackEndpoint` - Callback URL for authentication redirects (typically `window.location.origin`)
 - `contractId` - NEAR smart contract ID where RODiT tokens are stored
-- `rpcUrl` - NEAR RPC endpoint URL (e.g., `https://rpcnear.org`)
+- `rpcUrl` - NEAR RPC endpoint URL (e.g., `https://rpc.mainnet.fastnear.com`)
 
 #### Key Methods
 
@@ -340,11 +340,23 @@ Verifies Ed25519 signature using tweetnacl.
 ```javascript
 import { logger, createLogContext } from '@rodit/rodit-auth-fe';
 
-logger.debug('Debug message', { component: 'MyComponent', data: {...} });
-logger.info('Info message', { component: 'MyComponent' });
-logger.warn('Warning message', { component: 'MyComponent' });
-logger.error('Error message', { component: 'MyComponent', error });
+const ctx = createLogContext('MyComponent', 'doWork', { requestId: '...' });
+// createLogContext sets operation + sourceId (overridable)
+logger.debug('Debug message', { ...ctx, detail: 'payload' });
+logger.infoWithContext('Info message', ctx);
+logger.warnWithContext('Warning message', {
+  ...ctx,
+  result: 'failure',
+  resultText: 'recoverable issue'
+});
+logger.errorWithContext('Error message', {
+  ...ctx,
+  result: 'error',
+  resultText: 'operation failed'
+});
 ```
+
+Verbosity: `REACT_APP_LOG_LEVEL` or `LOG_LEVEL` (`silent` | `error` | `warn` | `info` | `debug`). Optional: `REACT_APP_DIAGNOSTIC_MODE=1` (stacks on main), `REACT_APP_LOG_METRICS=1`.
 
 ## State Management
 
@@ -432,17 +444,23 @@ await roditAuth.login_server_withnep413({
 ### Browser Limitations
 
 - **DNS Verification Skipped**: DNS TXT record verification not possible in browser. For full DNS verification, use [`@rodit/rodit-auth-be`](https://www.npmjs.com/package/@rodit/rodit-auth-be) on the server-side.
-- **No Node.js Support**: This package is browser-only and does not support Node.js `require()`. Use [`@rodit/rodit-auth-be`](https://www.npmjs.com/package/@rodit/rodit-auth-be) for Node.js environments.
+- **Server Node APIs**: Use [`@rodit/rodit-auth-be`](https://www.npmjs.com/package/@rodit/rodit-auth-be). This package’s wallet frontend is browser-oriented; the `./chain` subpath is for React Native / Metro (with a Buffer polyfill), not a substitute for the backend SDK.
 
 ## Environment Variables
 
-Required environment variables for mintserverapi-rodit:
+Typical consumer (e.g. mint / portal) build-time vars:
 
 ```bash
 REACT_APP_NEAR_CONTRACT_ID=your-contract.near
 REACT_APP_SIGNAPIENDPOINT=https://api.example.com
-REACT_APP_NEAR_RPC_URL=https://rpcnear.org
+REACT_APP_NEAR_RPC_URL=https://rpc.mainnet.fastnear.com
+# Optional RPC deadline / alternate (used by blockchain helpers)
+REACT_APP_NEAR_RPC_TIMEOUT=5000
+REACT_APP_NEAR_RPC_FALLBACK_URL=https://rpc.mainnet.fastnear.com
+REACT_APP_LOG_LEVEL=info
 ```
+
+NEAR RPC helpers (`nearorg_rpc_tokensfromaccountid`, token lookups in `RoditAuthService`) use a deadline (`REACT_APP_NEAR_RPC_TIMEOUT` or `NEAR_RPC_TIMEOUT`, default **5000** ms) and at most one alternate URL (`REACT_APP_NEAR_RPC_FALLBACK_URL` / `NEAR_RPC_FALLBACK_URL`, default FastNear when different from primary). The switch is logged; pass `fallbackRpcUrl: null` on internal helpers to disable.
 
 ## Dependencies
 
@@ -455,10 +473,10 @@ REACT_APP_NEAR_RPC_URL=https://rpcnear.org
 ## Package Information
 
 - **Name**: `@rodit/rodit-auth-fe`
-- **Version**: 4.10.12
+- **Version**: 4.10.14
 - **License**: UNLICENSED
 - **Repository**: https://github.com/discernible-io/rodit-sdk/tree/main/rodit-auth-fe
-- **Node Version**: >=20.0.0
+- **Node Version**: >=20.0.0 (package `engines`; browser/RN are the primary targets)
 
 ## Related Packages
 
