@@ -9,14 +9,8 @@ This is a production autonomous agent operating on a RODiT Passport. It authenti
 
 Judges can open the bot on mobile (Telegram app) or desktop (free Telegram account) and ask about IdentyClaw Passports, HOLA verification, or federated peers. The Try-it steps in the [README](../README.md) hit the same production APIs.
 
-## Session transcript
+## Chat demo
 
-Paste a dated real session below (user turns + agent replies). Until then, open the bot for a live session.
+A recorded session (who-are-you → native login → federated peer / claims) is posted here:
 
-<!--
-### YYYY-MM-DD
-
-**User:** …
-
-**Agent:** …
--->
+[https://x.com/Dscernble/status/2121563629430694400](https://x.com/Dscernble/status/2121563629430694400?a=8vu3FkUlIXQFWOuoPkQ&s=20)

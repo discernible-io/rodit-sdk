@@ -23,10 +23,28 @@ Contest entry for [NEAR HACKATHON](https://nearhackathon.com) track **NFTs That 
 | **Product** | **RODiT / IdentyClaw Passport** — a NEAR NFT credential. Possession unlocks three behaviors this SDK implements: **API login** (challenge → Ed25519 proof → JWT), **signed webhooks without HMAC**, and **mutual A2A between users without API keys**. Native login hits the Passport’s home API; federated login remints a peer JWT on a sibling API in the same token family. |
 | **How NEAR fits** | The Passport is minted and owned on NEAR (`genaaaa-identyclaw-com.near`). It is **not** a NEP-171 token. At login, servers check **on-chain** ownership over NEAR RPC before minting a session JWT. API login uses the Passport key (`@rodit/rodit-auth-be`). **NEP-413** is only the dApp alternative (`@rodit/rodit-auth-fe`). Moving the RODiT to another account moves login, webhook, and A2A rights with it. See [Ownership and transfer](#ownership-and-transfer-not-nep-171). |
 | **Try it** | Judges / AI screeners: follow [Try it](#try-it--nft-login-native--federated) (**Do** → **See**), including **Step 3 transfer**. Mint at [purchase.identyclaw.com](https://purchase.identyclaw.com) with **1 month** longevity (~**0.08 NEAR** recent mainnet minimum; UI quotes exact). |
-| **Evidence** | [TRANSFER-TEST-REPORT.md](docs/TRANSFER-TEST-REPORT.md) (C4: old login FAIL / new PASS) · [ONCHAIN.md](docs/ONCHAIN.md) (explorer hashes) · [TRACK-NFTS.md](docs/TRACK-NFTS.md) (vs [tracks/10-nfts.md](https://github.com/nearai/near-hackathon-prompt-examples/blob/main/tracks/10-nfts.md)) |
+| **Evidence** | [TRANSFER-TEST-REPORT.md](docs/TRANSFER-TEST-REPORT.md) (C4: old login FAIL / new PASS) · [ONCHAIN.md](docs/ONCHAIN.md) (explorer hashes) · [TRACK-NFTS.md](docs/TRACK-NFTS.md) (vs [tracks/10-nfts.md](https://github.com/nearai/near-hackathon-prompt-examples/blob/main/tracks/10-nfts.md)) · [Baseline vs window](#baseline-vs-in-window-q-003) |
 | **Submission repo** | **This repository only** (`projectUrl`). Links below are supporting code — not separate contest entries. |
 
 Also selecting related tracks is reasonable: `security` (possession-gated access, no shared webhook secrets), `agents` (mutual A2A without API keys), `swarms` (spawn agents without provisioning pairwise API keys or HMAC secrets).
+
+### Baseline vs in-window (Q-003)
+
+This is an existing product (SDK since May 2026; Passport contract on NEAR since 2024). Per [HACKATHON.md](https://nearhackathon.com/HACKATHON.md) Q-001–Q-005, only work in the announcement→deadline window is judged; earlier commits are **baseline**.
+
+| Marker | Value |
+|--------|--------|
+| **Window** | 2026-10-19 (announcement) → 2026-11-14 23:59 UTC |
+| **`pre-hackathon` tag** | Last commit before the window — [`6105026`](https://github.com/discernible-io/rodit-sdk/commit/6105026fe8151422df543345a7d887e3299d6ffb) (2026-10-13) |
+| **`hackathon-submission` tag** | Tip of this entry on `main` |
+| **Diff** | [compare `pre-hackathon…hackathon-submission`](https://github.com/discernible-io/rodit-sdk/compare/pre-hackathon...hackathon-submission) |
+
+**What was built in-window** (judge this, not the pre-window login spine):
+
+- Login hardening and NEAR reliability on the NFT→API path (`@rodit/rodit-auth-be` **9.17.1 → 10.0.3**): challenge max-age; `timestamp` / `timestamp_iso`; JWT peer re-verification without re-applying login max-age; NEAR RPC deadlines + logged alternate endpoint; AGPL-3.0-only on published packages — see [rodit-auth-be/CHANGELOG.md](rodit-auth-be/CHANGELOG.md)
+- Contest proof pack: ownership/`rodit_transfer` (not NEP-171) documented for judges; [Try it](#try-it--nft-login-native--federated) Steps 0–3; [TRANSFER-TEST-REPORT.md](docs/TRANSFER-TEST-REPORT.md) (C4); [ONCHAIN.md](docs/ONCHAIN.md); [TRACK-NFTS.md](docs/TRACK-NFTS.md); runnable `examples/`; [LIVE-AGENT.md](docs/LIVE-AGENT.md) / live surfaces
+
+Pre-window libraries and APIs (RODiT mint, native/federated login spine, HOLA packages) remain baseline.
 
 ### Ownership and transfer (not NEP-171)
 
@@ -90,7 +108,7 @@ Reproduce from this README alone (HACKATHON.md Q-017):
 2. With a Passport from [purchase.identyclaw.com](https://purchase.identyclaw.com) (**1 month**), run **Step 1** — expect home `jwt_token` and **200** on `/api/me/identity`; claim `rodit_subjectuniqueidentifier_url` is `null`.
 3. Run **Step 2** — expect peer `jwt_token`, peer JWT rejected on home, **200** on peer `/api/token/claims`; claim `rodit_subjectuniqueidentifier_url` is the peer URL.
 4. Run **Step 3** (transfer) — after `rodit_transfer`, old owner login rejected, new owner login accepted. Dated results: [docs/TRANSFER-TEST-REPORT.md](docs/TRANSFER-TEST-REPORT.md).
-5. Confirm NEAR role: ownership checked on-chain at login. The contract is not NEP-171. API login uses the Passport key; NEP-413 is only the dApp alternative.
+5. Confirm NEAR role: ownership checked on-chain at login. The contract is not NEP-171. API login uses the Passport key; NEP-413 is only the dApp alternative. Baseline vs window: [Q-003](#baseline-vs-in-window-q-003).
 
 ## Try it — NFT login (native + federated)
 
@@ -227,7 +245,7 @@ Optional: transfer back the same way so you keep the Passport.
 | Surface | What you get |
 |---|---|
 | [api.identyclaw.com](https://api.identyclaw.com) · [purchase.identyclaw.com](https://purchase.identyclaw.com) · [verify.identyclaw.com](https://verify.identyclaw.com) | The production APIs the Try-it steps above run against — live now |
-| [@identyclawconcierge_bot](https://t.me/identyclawconcierge_bot) on Telegram | **Interactive:** talk to a live autonomous agent operating on a RODiT Passport. Opens directly in the Telegram app on mobile (free account needed on desktop). A dated transcript of one of its real sessions is in [docs/LIVE-AGENT.md](docs/LIVE-AGENT.md) |
+| [@identyclawconcierge_bot](https://t.me/identyclawconcierge_bot) on Telegram | **Interactive:** talk to a live autonomous agent operating on a RODiT Passport. Opens directly in the Telegram app on mobile (free account needed on desktop). Chat demo: [docs/LIVE-AGENT.md](docs/LIVE-AGENT.md) · [X post](https://x.com/Dscernble/status/2121563629430694400?a=8vu3FkUlIXQFWOuoPkQ&s=20) |
 
 The agent behind the bot authenticates exactly as this SDK implements: native login
 (challenge → Ed25519 proof → JWT on its home API) and federated login to a sibling
