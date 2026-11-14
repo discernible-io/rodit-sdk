@@ -1,15 +1,15 @@
 # RODiT SDK monorepo
 
-npm packages for [**RODiT**](https://www.discernible.io) / IdentyClaw: NEAR NFT credentials that **log into APIs** (native + federated).
+npm packages for [**RODiT**](https://www.discernible.io) / IdentyClaw: NEAR NFT credentials that **do something** — login to APIs, sign webhooks without HMAC secrets, and run mutual agent-to-agent (A2A) sessions without API keys.
 
 | Package | Directory | Version | Docs |
 |---------|-----------|---------|------|
-| [@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be) | [rodit-auth-be/](rodit-auth-be/) | **10.0.3** | [README](rodit-auth-be/README.md) — server login, JWT, permissions, webhooks |
+| [@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be) | [rodit-auth-be/](rodit-auth-be/) | **10.0.3** | [README](rodit-auth-be/README.md) — server login, JWT, permissions, signed webhooks |
 | [@rodit/rodit-auth-fe](https://www.npmjs.com/package/@rodit/rodit-auth-fe) | [rodit-auth-fe/](rodit-auth-fe/) | **4.10.15** | [README](rodit-auth-fe/README.md) — browser / NEP-413 client |
 | [@rodit/hola-client](https://www.npmjs.com/package/@rodit/hola-client) | [hola-client/](hola-client/) | **0.1.1** | [README](hola-client/README.md) — create / sign HOLA lines |
 | [@rodit/verify-hola](https://www.npmjs.com/package/@rodit/verify-hola) | [verify-hola/](verify-hola/) | **0.1.7** | [README](verify-hola/README.md) — verify HOLA CLI |
 
-**License:** [AGPL-3.0-only](LICENSE) · **Backlog:** [rodit-auth-be/TODO.md](rodit-auth-be/TODO.md) · **Contest tasks:** [CONTEST.md](CONTEST.md)
+**License:** [AGPL-3.0-only](LICENSE) · **Backlog:** [rodit-auth-be/TODO.md](rodit-auth-be/TODO.md)
 
 ---
 
@@ -19,25 +19,43 @@ Contest entry for [NEAR HACKATHON](https://nearhackathon.com) track **NFTs That 
 
 | | |
 |---|---|
-| **Problem** | APIs still gate access with API keys and pairwise secrets. Those credentials are not the identity: they do not move with an on-chain asset, do not prove current possession, and do not scale when every agent must talk to every peer. |
-| **Product** | **RODiT / IdentyClaw Passport** — a NEAR NFT credential. Holding the NFT lets you **log into APIs**: challenge → Ed25519 proof → JWT → protected routes. This monorepo ships the npm packages that implement **native** login (home API) and **federated** login (remint a peer JWT on a sibling API in the same token family). |
-| **How NEAR fits** | The Passport is minted and owned on NEAR (`genaaaa-identyclaw-com.near`). At login, servers check **on-chain** RODiT ownership and metadata over NEAR RPC before minting a session JWT. Transfer the NFT and login rights follow the new owner — ownership with behavior, not a JPEG. |
-| **Try it** | Judges / AI screeners: follow [Try it — NFT login](#try-it--nft-login-native--federated) (**Do** → **See**). Mint at [purchase.identyclaw.com](https://purchase.identyclaw.com) with **1 month** longevity for minimum cost. |
+| **Problem** | APIs and agents still gate trust with **API keys** and **pairwise secrets** (HMAC webhook secrets, shared keys per peer). Those credentials are not the identity: they do not move with an on-chain asset, do not prove current possession, and do not scale when every user/agent must talk to every peer. |
+| **Product** | **RODiT / IdentyClaw Passport** — a NEAR NFT credential. Possession unlocks three behaviors this SDK implements: **API login** (challenge → Ed25519 proof → JWT), **signed webhooks without HMAC**, and **mutual A2A between users without API keys**. Native login hits the Passport’s home API; federated login remints a peer JWT on a sibling API in the same token family. |
+| **How NEAR fits** | The Passport is minted and owned on NEAR (`genaaaa-identyclaw-com.near`). At login, servers check **on-chain** RODiT ownership and metadata over NEAR RPC before minting a session JWT. Transfer the NFT and login / webhook / A2A rights follow the new owner — ownership with behavior, not a JPEG. |
+| **Try it** | Judges / AI screeners: follow [Try it — NFT login](#try-it--nft-login-native--federated) (**Do** → **See**). That path proves the possession gate that everything else builds on. Mint at [purchase.identyclaw.com](https://purchase.identyclaw.com) with **1 month** longevity for minimum cost. |
 | **Submission repo** | **This repository only** (`projectUrl`). Links below are supporting code — not separate contest entries. |
 
-Also selecting related tracks is reasonable: `security` (possession-gated access), `agents` (agent Passport login).
+Also selecting related tracks is reasonable: `security` (possession-gated access, no shared webhook secrets), `agents` (mutual A2A without API keys).
+
+### What the NFT unlocks (capabilities judges should see)
+
+Holding a RODiT Passport is the credential. No shared API key, no per-peer HMAC secret.
+
+| Capability | Without RODiT | With a RODiT NFT (this SDK) |
+|------------|---------------|-----------------------------|
+| **API access** | Distribute and rotate API keys; keys do not prove current NFT possession | Challenge → Ed25519 possession proof → JWT; server checks on-chain ownership at login ([Try it](#try-it--nft-login-native--federated)). Agents: [openclaw-identyclaw-plugin](https://github.com/discernible-io/openclaw-identyclaw-plugin), [hermes-identyclaw-auth](https://github.com/discernible-io/hermes-identyclaw-auth) |
+| **Signed webhooks without HMAC** | Outbound webhooks signed with a shared HMAC secret you must provision and rotate per destination | Outbound webhooks are **Ed25519-signed**; the signer’s public key / implicit account travels on the request (`X-Rodit-Public-Key`, `X-Rodit-Implicit-Account`, `X-Signature`). Receiver verifies the signature and binds it to a live login session — **no shared webhook secret**. SDK: [Webhooks](rodit-auth-be/README.md#webhooks). Agents: [openclaw-identyclaw-webhooks-plugin](https://github.com/discernible-io/openclaw-identyclaw-webhooks-plugin), [hermes-identyclaw-webhook](https://github.com/discernible-io/hermes-identyclaw-webhook) |
+| **Mutual A2A without API keys** | Agent A and agent B each need the other’s API key (or a broker) before they can talk | Two Passport holders log into each other’s APIs (native or federated) with the same possession proof. Mutual auth is **RODiT ↔ RODiT**, not key exchange. Agents: [openclaw-identyclaw-a2a-plugin](https://github.com/discernible-io/openclaw-identyclaw-a2a-plugin), [hermes-identyclaw-a2a](https://github.com/discernible-io/hermes-identyclaw-a2a). Demo: [lastcradle.io](https://lastcradle.io) |
+
+**Why login is the reproducible demo:** Steps 0–2 below are the possession gate AI screeners can run from this README alone. Webhooks and A2A reuse that same session (JWT + Ed25519 identity); they are not separate credential systems.
+
+**Agent hosts that use this SDK** (supporting repos — not separate submissions):
+
+| Host | Login | Signed webhooks (no HMAC) | Mutual A2A (no API keys) |
+|------|-------|---------------------------|--------------------------|
+| **OpenClaw** | [openclaw-identyclaw-plugin](https://github.com/discernible-io/openclaw-identyclaw-plugin) | [openclaw-identyclaw-webhooks-plugin](https://github.com/discernible-io/openclaw-identyclaw-webhooks-plugin) | [openclaw-identyclaw-a2a-plugin](https://github.com/discernible-io/openclaw-identyclaw-a2a-plugin) |
+| **Hermes** | [hermes-identyclaw-auth](https://github.com/discernible-io/hermes-identyclaw-auth) | [hermes-identyclaw-webhook](https://github.com/discernible-io/hermes-identyclaw-webhook) | [hermes-identyclaw-a2a](https://github.com/discernible-io/hermes-identyclaw-a2a) |
 
 ### Ecosystem map (supporting repos — not separate submissions)
 
-| Layer | Repository | Role in the NFT→API login story |
-|-------|------------|----------------------------------|
-| **Contest entry / npm SDK** | **[rodit-sdk](https://github.com/discernible-io/rodit-sdk)** (this repo) | `@rodit/rodit-auth-be` / `-fe`, HOLA packages — native + federated login |
+| Layer | Repository | Role |
+|-------|------------|------|
+| **Contest entry / npm SDK** | **[rodit-sdk](https://github.com/discernible-io/rodit-sdk)** (this repo) | `@rodit/rodit-auth-be` / `-fe`, HOLA — login, signed webhooks, mutual A2A building blocks |
 | On-chain NFT | [mintcontract-idc](https://github.com/discernible-io/mintcontract-idc) | RODiT mint/transfer contract on NEAR (`genaaaa-identyclaw-com.near`) |
 | Federated peer template | [api-scaffold-federated-rodit-auth](https://github.com/discernible-io/api-scaffold-federated-rodit-auth) | Accept Passport holders; remint peer JWT |
 | Dual-login proof harness | [api-test-scaffold](https://github.com/discernible-io/api-test-scaffold) | `authenticationComprehensive`: home then federated peer |
 | Live federated peer / demo API | [lastcradle-be](https://github.com/discernible-io/lastcradle-be) · [lastcradle-fe](https://github.com/discernible-io/lastcradle-fe) | Product API + spectator UI (`api.lastcradle.io` / `lastcradle.io`) |
-| Agent hosts | [openclaw-identyclaw-plugin](https://github.com/discernible-io/openclaw-identyclaw-plugin) · [openclaw-identyclaw-a2a-plugin](https://github.com/discernible-io/openclaw-identyclaw-a2a-plugin) · [openclaw-identyclaw-webhooks-plugin](https://github.com/discernible-io/openclaw-identyclaw-webhooks-plugin) | OpenClaw tools / A2A / webhooks with Passport login |
-| Agent hosts | [hermes-identyclaw-auth](https://github.com/discernible-io/hermes-identyclaw-auth) · [hermes-identyclaw-webhook](https://github.com/discernible-io/hermes-identyclaw-webhook) · [hermes-identyclaw-a2a](https://github.com/discernible-io/hermes-identyclaw-a2a) | Hermes Passport auth / webhook / A2A |
+| OpenClaw / Hermes plugins | See [Agent hosts that use this SDK](#agent-hosts-that-use-this-sdk-supporting-repos--not-separate-submissions) | Login, signed webhooks, mutual A2A on both agent hosts |
 
 ### For AI screeners (Claude / Codex)
 
@@ -72,9 +90,9 @@ Pre-window libraries and APIs (RODiT mint, native/federated login spine, HOLA pa
 
 ## Try it — NFT login (native + federated)
 
-Primary path for human judges and AI screeners. Each step is **Do** (commands) → **See** (expected result).
+Primary path for human judges and AI screeners. Each step is **Do** (commands) → **See** (expected result). This proves the possession gate; signed webhooks and mutual A2A reuse the same RODiT identity (see [What the NFT unlocks](#what-the-nft-unlocks-capabilities-judges-should-see)).
 
-**Product:** a RODiT / IdentyClaw Passport is a NEAR NFT credential. Possession unlocks API login. Native login mints a JWT on the Passport’s home API; federated login **remints** a new JWT on a sibling API in the same token family (home JWTs are not portable).
+**Product:** a RODiT / IdentyClaw Passport is a NEAR NFT credential. Possession unlocks API login (and, with that session, Ed25519 webhooks without HMAC and mutual A2A without API keys). Native login mints a JWT on the Passport’s home API; federated login **remints** a new JWT on a sibling API in the same token family (home JWTs are not portable).
 
 **NEAR:** at login the server checks on-chain RODiT ownership / metadata (via NEAR RPC) before issuing a session JWT.
 
