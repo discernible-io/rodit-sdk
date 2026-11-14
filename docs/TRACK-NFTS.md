@@ -15,7 +15,7 @@ This entry is a **credential NFT**: possession unlocks API login, signed webhook
 | What stops the **old owner** from keeping access | After `rodit_transfer`, `owner_id` is the receiver. Login binds the signature to the **current** owner via NEAR RPC. Old account’s proof fails. Demo: README Step 3 + [examples/transfer-proof.sh](../examples/transfer-proof.sh) |
 | **Gated** surface only current holders can open | `GET /api/me/identity` (and peer claims) require a JWT minted after on-chain ownership check — [Try it](../README.md#try-it--nft-login-native--federated) Steps 0–2 · wire guide [`login-authentication`](https://api.identyclaw.com/api/mcp/resource/doc:reference:login-authentication) |
 | History per NFT (earned / paid / holders) | On-chain: mint + `rodit_transfer` events (NEP-297-style) and explorer history for the token id. Off-chain earnings ledgers / payout history are **out of scope** for this SDK entry (credential, not treasury NFT) |
-| Tests for the transfer path | Step 3 Do→See; [ONCHAIN.md](./ONCHAIN.md) recorded transfers; wallet script `idcp-wallet.sh` |
+| Tests for the transfer path | Step 3 Do→See; dated C4 report [TRANSFER-TEST-REPORT.md](./TRANSFER-TEST-REPORT.md) (old FAIL / new PASS + explorer txs); [ONCHAIN.md](./ONCHAIN.md); `idcp-wallet.sh` |
 | NEP-171 specifically | **Not used.** Equivalent surface: `rodit_*` methods. Wallet dApps may use **NEP-413** only as an alternate API login (`@rodit/rodit-auth-fe`) |
 | Sub-account / wallet-in-NFT | Not this design. The Passport is the credential; the holder’s NEAR account owns it. Transfer moves the credential, not an embedded treasury account |
 
@@ -36,3 +36,4 @@ This entry is a **credential NFT**: possession unlocks API login, signed webhook
 |-------|-----|
 | `security` | Possession-gated access; no shared webhook HMAC secrets |
 | `agents` | Mutual A2A without API keys (OpenClaw / Hermes plugins) |
+| `swarms` | Keyless webhooks + A2A let you spin dynamically created agent swarms without provisioning pairwise secrets |

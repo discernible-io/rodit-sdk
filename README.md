@@ -23,11 +23,11 @@ Contest entry for [NEAR HACKATHON](https://nearhackathon.com) track **NFTs That 
 | **Product** | **RODiT / IdentyClaw Passport** — a NEAR NFT credential. Possession unlocks three behaviors this SDK implements: **API login** (challenge → Ed25519 proof → JWT), **signed webhooks without HMAC**, and **mutual A2A between users without API keys**. Native login hits the Passport’s home API; federated login remints a peer JWT on a sibling API in the same token family. |
 | **How NEAR fits** | The Passport is minted and owned on NEAR (`genaaaa-identyclaw-com.near`). It is **not** a NEP-171 token. At login, servers check **on-chain** ownership over NEAR RPC before minting a session JWT. API login uses the Passport key (`@rodit/rodit-auth-be`). **NEP-413** is only the dApp alternative (`@rodit/rodit-auth-fe`). Moving the RODiT to another account moves login, webhook, and A2A rights with it. See [Ownership and transfer](#ownership-and-transfer-not-nep-171). |
 | **Try it** | Judges / AI screeners: follow [Try it](#try-it--nft-login-native--federated) (**Do** → **See**), including **Step 3 transfer**. Mint at [purchase.identyclaw.com](https://purchase.identyclaw.com) with **1 month** longevity (~**0.08 NEAR** recent mainnet minimum; UI quotes exact). |
-| **On-chain evidence** | Mint + login (RPC ownership check) + transfer explorer links: [docs/ONCHAIN.md](docs/ONCHAIN.md) |
+| **On-chain evidence** | Mint + login + transfer: [docs/ONCHAIN.md](docs/ONCHAIN.md) · **C4 transfer report** (old login FAIL / new PASS): [docs/TRANSFER-TEST-REPORT.md](docs/TRANSFER-TEST-REPORT.md) |
 | **Track mapping** | Point-by-point vs [tracks/10-nfts.md](https://github.com/nearai/near-hackathon-prompt-examples/blob/main/tracks/10-nfts.md): [docs/TRACK-NFTS.md](docs/TRACK-NFTS.md) |
 | **Submission repo** | **This repository only** (`projectUrl`). Links below are supporting code — not separate contest entries. |
 
-Also selecting related tracks is reasonable: `security` (possession-gated access, no shared webhook secrets), `agents` (mutual A2A without API keys).
+Also selecting related tracks is reasonable: `security` (possession-gated access, no shared webhook secrets), `agents` (mutual A2A without API keys), `swarms` (spawn agents without provisioning pairwise API keys or HMAC secrets).
 
 ### Ownership and transfer (not NEP-171)
 
@@ -61,6 +61,8 @@ Holding a RODiT Passport is the credential. No shared API key, no per-peer HMAC 
 | **Signed webhooks without HMAC** | Outbound webhooks signed with a shared HMAC secret you must provision and rotate per destination | Outbound webhooks are **Ed25519-signed**; the signer’s public key / implicit account travels on the request (`X-Rodit-Public-Key`, `X-Rodit-Implicit-Account`, `X-Signature`). Receiver verifies the signature and binds it to a live login session — **no shared webhook secret**. SDK: [Webhooks](rodit-auth-be/README.md#webhooks). Agents: [openclaw-identyclaw-webhooks-plugin](https://github.com/discernible-io/openclaw-identyclaw-webhooks-plugin), [hermes-identyclaw-webhook](https://github.com/discernible-io/hermes-identyclaw-webhook) |
 | **Mutual A2A without API keys** | Agent A and agent B each need the other’s API key (or a broker) before they can talk | Two Passport holders log into each other’s APIs (native or federated) with the same possession proof. Mutual auth is **RODiT ↔ RODiT**, not key exchange. Agents: [openclaw-identyclaw-a2a-plugin](https://github.com/discernible-io/openclaw-identyclaw-a2a-plugin), [hermes-identyclaw-a2a](https://github.com/discernible-io/hermes-identyclaw-a2a). Demo: [lastcradle.io](https://lastcradle.io) |
 
+**Dynamic agent swarms.** Because webhooks need no HMAC secret and A2A needs no per-peer API key, new agents can be spun up with only a Passport (or a transferred one): they log in, emit signed webhooks, and join mutual A2A sessions without a provisioning step that scales as *N×N* secrets. That is how this credential NFT supports short-lived or dynamically created AI agent swarms — the reproducible demo below is still the possession gate those sessions reuse.
+
 **Why login + transfer are the reproducible demo:** Steps 0–2 are the possession gate; Step 3 shows that gate **moves** with the NFT. Webhooks and A2A reuse that same session (JWT + Ed25519 identity); they are not separate credential systems.
 
 **Agent hosts that use this SDK** (supporting repos — not separate submissions):
@@ -88,7 +90,7 @@ Reproduce from this README alone (HACKATHON.md Q-017):
 1. Run **Step 0** (no secrets) — expect challenge JSON and `401 MISSING_TOKEN` on `/api/me/identity`.
 2. With a Passport from [purchase.identyclaw.com](https://purchase.identyclaw.com) (**1 month**), run **Step 1** — expect home `jwt_token` and **200** on `/api/me/identity`; claim `rodit_subjectuniqueidentifier_url` is `null`.
 3. Run **Step 2** — expect peer `jwt_token`, peer JWT rejected on home, **200** on peer `/api/token/claims`; claim `rodit_subjectuniqueidentifier_url` is the peer URL.
-4. Run **Step 3** (transfer) — after `rodit_transfer`, old owner login rejected, new owner login accepted. Explorer trail: [docs/ONCHAIN.md](docs/ONCHAIN.md).
+4. Run **Step 3** (transfer) — after `rodit_transfer`, old owner login rejected, new owner login accepted. Dated results: [docs/TRANSFER-TEST-REPORT.md](docs/TRANSFER-TEST-REPORT.md).
 5. Confirm NEAR role: ownership checked on-chain at login. The contract is not NEP-171. API login uses the Passport key; NEP-413 is only the dApp alternative.
 
 ## Try it — NFT login (native + federated)
@@ -177,7 +179,9 @@ cd examples && node federated-login.js
 
 ### Step 3 — transfer proof (rights follow the new owner)
 
-This is the NFT behavior the track cares about: move the Passport, and login (and therefore webhook / A2A rights) follow. Same on-chain procedure as [key rotation](https://api.identyclaw.com/api/mcp/resource/doc:reference:key-rotation) (transfer custody; Passport id unchanged). Recorded mainnet txs: [docs/ONCHAIN.md](docs/ONCHAIN.md). Helper: [examples/transfer-proof.sh](examples/transfer-proof.sh) (wraps `idcp-wallet.sh`).
+This is the NFT behavior the track cares about: move the Passport, and login (and therefore webhook / A2A rights) follow. Same on-chain procedure as [key rotation](https://api.identyclaw.com/api/mcp/resource/doc:reference:key-rotation) (transfer custody; Passport id unchanged).
+
+**Recorded C4 run (click results):** [docs/TRANSFER-TEST-REPORT.md](docs/TRANSFER-TEST-REPORT.md) — outbound + return txs, old owner **401** `RODIT_NOT_FOUND`, new owner JWT + **200**. Explorer index: [docs/ONCHAIN.md](docs/ONCHAIN.md). Helpers: [examples/transfer-proof.sh](examples/transfer-proof.sh), [examples/native-login-probe.js](examples/native-login-probe.js) (prints `jti` / statuses only; no secrets).
 
 **Do:**
 
