@@ -1,6 +1,6 @@
 # @rodit/verify-hola
 
-**Version:** 0.1.6 · Depends on `@rodit/rodit-auth-be` **10.0.2** for `--rpc` chain reads.
+**Version:** 0.1.7 · Depends on `@rodit/rodit-auth-be` **10.0.3** for `--rpc` chain reads. · **License:** AGPL-3.0-only
 
 Part of the [Discernible IO SDK monorepo](../README.md).
 
@@ -30,6 +30,12 @@ node bin/verify-hola.js report "HOLA/..." --rpc \
   --canonical-peer <lemuel-gulliver-lobby-tokenId>
 ```
 
+Stdin (HOLA on `-`):
+
+```bash
+echo "HOLA/..." | npx @rodit/verify-hola report - --rpc
+```
+
 ## Alternative: IdentyClaw API path
 
 JWT is optional — `POST /api/identity/verify` is public. Outbound HTTP uses a deadline (`IDENTYCLAW_HTTP_TIMEOUT` or `NEAR_RPC_TIMEOUT`, default **15000** ms).
@@ -42,27 +48,38 @@ npx @rodit/verify-hola report "HOLA/MUNDO/..."
 
 | Command | Description |
 | --- | --- |
-| `verify-hola verify "HOLA/..." --rpc` | Cryptographic outcome via NEAR RPC |
-| `verify-hola report "HOLA/..." --rpc` | Verify + on-chain passport profile (DN) |
-| `verify-hola report "HOLA/..."` | Verify + profile via API (`includeProfile`) |
+| `verify-hola verify "HOLA/..." [--rpc]` | Cryptographic verify only (JSON). Exit `0` if `verified`. |
+| `verify-hola report "HOLA/..." [--rpc]` | Verify + passport profile (`includeProfile` on API; on-chain DN on `--rpc`) |
+| `verify-hola report - [--rpc]` | Same as `report`, HOLA read from stdin |
+
+### Flags
+
+| Flag | Applies to | Notes |
+| --- | --- | --- |
+| `--rpc` | `verify`, `report` | Direct NEAR RPC via `@rodit/rodit-auth-be` (no IdentyClaw API) |
+| `--canonical-peer <tokenId>` | **`report` only** | Impersonation guard (also `IDENTYCLAW_CANONICAL_PEER_ID`). Ignored by bare `verify`. |
+| `--expected-recipient <tokenId>` | `verify` / `report` (API path) | Also `IDENTYCLAW_EXPECTED_RECIPIENT`. Not applied on the RPC verify path. |
+| `--base-url <url>` | API path | Overrides `IDENTYCLAW_BASE_URL` |
+| `--near-rpc-url <url>` | `--rpc` | Overrides `NEAR_RPC_URL` for this run |
+| `--near-contract-id <id>` | `--rpc` | Overrides `NEAR_CONTRACT_ID` for this run |
 
 ## Environment
 
 | Variable | `--rpc` | API (default) |
 | --- | --- | --- |
-| `NEAR_RPC_URL` | **Required** | — |
-| `NEAR_CONTRACT_ID` | **Required** | — |
+| `NEAR_RPC_URL` | **Required** (unless `--near-rpc-url`) | — |
+| `NEAR_CONTRACT_ID` | **Required** (unless `--near-contract-id`) | — |
 | `NEAR_RPC_TIMEOUT` | optional (ms; auth-be default 5000) | also used as HTTP deadline fallback |
 | `IDENTYCLAW_HTTP_TIMEOUT` | — | optional HTTP deadline (ms; default 15000) |
 | `IDENTYCLAW_BASE_URL` | — | default `https://api.identyclaw.com` |
 | `IDENTYCLAW_JWT` | — | optional |
-| `IDENTYCLAW_CANONICAL_PEER_ID` | optional impersonation guard | optional |
-| `IDENTYCLAW_EXPECTED_RECIPIENT` | — | optional |
+| `IDENTYCLAW_CANONICAL_PEER_ID` | **`report` only** (impersonation guard) | **`report` only** |
+| `IDENTYCLAW_EXPECTED_RECIPIENT` | — (not used on RPC verify) | optional |
 
 ## Concierge demo (Lemuel Gulliver)
 
 1. Message **Lemuel Gulliver** via A2A at [identyclaw-concierge.identyclaw.com:7443](https://identyclaw-concierge.identyclaw.com:7443) (or email / Discord / Telegram) and ask for a HOLA.
-2. Verify with RPC (recommended):
+2. Verify with RPC (recommended) using **`report`** so the canonical-peer guard applies:
 
 ```bash
 export NEAR_RPC_URL="https://rpc.mainnet.fastnear.com"
@@ -77,7 +94,7 @@ Web UI (API path): https://verify.identyclaw.com
 
 ## API
 
-Deep import (package ships `lib/`; not a formal `exports` map entry):
+Package `main` is `lib/report.js` (`buildHolaReport`, `verifyHola`). Deep import for RPC (package ships `lib/`; not a formal `exports` map entry):
 
 ```javascript
 const { buildHolaReportViaRpc } = require("@rodit/verify-hola/lib/verify-rpc");

@@ -164,7 +164,7 @@ Processes the callback after wallet signature.
 
 ```javascript
 const result = await roditAuth.handleLoginCallback(window.location.href);
-// Returns: { jwt_token: string, decoded: object }
+// Returns: { jwt_token: string, apiEndpoint: string }
 ```
 
 **Process:**
@@ -194,7 +194,7 @@ const response = await roditAuth.fetchWithErrorHandling_fe(
 - Absorbs server-initiated renewals from the `New-Token` response header (default)
 - Optional client timer may call `POST /api/refresh` only if the host exposes it
 - Comprehensive error logging
-- Returns parsed JSON response
+- On success returns parsed JSON; on many failures **throws**, or returns `{ error, message }`
 
 ##### `nearorg_wallet_tokensfromaccountid(wallet, contractId, accountId)`
 
@@ -228,9 +228,9 @@ import {
 } from '@rodit/rodit-auth-fe';
 ```
 
-#### `verify_rodit_ownership(peerroditid, peer_rodit, authService)`
+#### `verify_rodit_ownership(peerroditid, peertimestamp, peerroditid_base64url_signature, peer_rodit)`
 
-Verifies cryptographic ownership of a RODiT token by validating the Ed25519 signature.
+Verifies cryptographic ownership of a RODiT token by validating the Ed25519 signature over the peer identity (no `authService` argument).
 
 #### `verify_rodit_islive(notAfter, notBefore)`
 
@@ -469,12 +469,13 @@ NEAR RPC helpers (`nearorg_rpc_tokensfromaccountid`, token lookups in `RoditAuth
 - `tweetnacl` - Ed25519 cryptography
 - `tweetnacl-util` - Utility functions for tweetnacl
 - `ulid` - ULID generation for request tracking
+- `buffer` - required by `frontend/rodit_fe.js` (`import { Buffer } from "buffer"`); install / polyfill for browser and Expo/Hermes (see Buffer note above)
 
 ## Package Information
 
 - **Name**: `@rodit/rodit-auth-fe`
-- **Version**: 4.10.14
-- **License**: UNLICENSED
+- **Version**: 4.10.15
+- **License**: AGPL-3.0-only
 - **Repository**: https://github.com/discernible-io/rodit-sdk/tree/main/rodit-auth-fe
 - **Node Version**: >=20.0.0 (package `engines`; browser/RN are the primary targets)
 
@@ -492,7 +493,7 @@ npm test
 
 ## License
 
-UNLICENSED - Copyright (c) 2026 Discernible IO. All rights reserved.
+AGPL-3.0-only — see [LICENSE](LICENSE). Copyright (c) 2026 Discernible IO.
 
 ---
 

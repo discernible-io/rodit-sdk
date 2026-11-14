@@ -1,6 +1,6 @@
 # @rodit/hola-client
 
-**Version:** 0.1.0
+**Version:** 0.1.1
 
 Node helpers for IdentyClaw **HOLA line** construction — uppercase canonicalization, RFC 4648 base32 signatures, and mod-23 checksum.
 
@@ -37,7 +37,7 @@ Peer verification: use [`@rodit/verify-hola`](../verify-hola/) (`npx @rodit/veri
 
 | Export | Purpose |
 | --- | --- |
-| `createHola({ nearPrivateKey, jwt, tokenId, ... })` | API session + nonce fetch + local HOLA sign (recommended) |
+| `createHola({ nearPrivateKey, jwt, tokenId, ... })` | Nonce fetch (`getNonce`) + local HOLA sign (recommended; caller supplies JWT) |
 | `getNonce({ baseUrl, jwt })` | `GET /api/holanonce16ts` (requires API bearer token) |
 | `buildAndSign({ recipient, tokenId, timestamp, noncetsHex, privateKey })` | Build standard HOLA line when you already have nonce fields |
 | `nearPrivateKeyToSigningSecretKey(nearPrivateKey)` | NEAR `ed25519:` key → tweetnacl secret (stays on host) |
@@ -107,4 +107,4 @@ npm test
 
 ## License
 
-MIT-0
+[AGPL-3.0-only](LICENSE)

@@ -1,8 +1,8 @@
 {
   "name": "@rodit/hola-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Create and parse IdentyClaw HOLA handshake lines (uppercase canonicalization, base32, mod-23 checksum)",
-  "license": "MIT-0",
+  "license": "AGPL-3.0-only",
   "type": "commonjs",
   "main": "./index.js",
   "dependencies": {
@@ -16,7 +16,8 @@
   "files": [
     "index.js",
     "lib",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "keywords": [
     "identyclaw",

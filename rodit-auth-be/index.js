@@ -2006,6 +2006,10 @@ class RoditClient {
 
 // Import health check and retry functions
 const { healthCheckRPC, resolveHealthyNearRpcUrl, fetchWithRetry, NearRpcError } = require('./lib/blockchain/blockchainservice');
+const {
+  setExpressSessionStore,
+  configureStorageFromConfig
+} = require('./lib/auth/sessionmanager');
 
 // Export the RoditClient class and commonly used SDK components
 module.exports = {
@@ -2015,6 +2019,8 @@ module.exports = {
   stateManager,
   roditManager,
   sessionManager,
+  setExpressSessionStore,
+  configureStorageFromConfig,
   blockchainService,
   utils,
   config,

@@ -4,7 +4,19 @@ Node.js / Express SDK for RODiT-based mutual authentication, authorization, sess
 
 **npm:** [https://www.npmjs.com/package/@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be)  
 **Monorepo:** [discernible-io/rodit-sdk](https://github.com/discernible-io/rodit-sdk) (this directory)  
-**Version:** 10.0.2 · **License:** UNLICENSED · **Author:** Discernible IO · **Node:** >=18
+**Version:** 10.0.3 · **License:** AGPL-3.0-only · **Author:** Discernible IO · **Node:** >=18
+
+## What is RODiT?
+
+**RODiT** (Rich Online Digital Token) is a NEAR on-chain credential format. Each token carries metadata — API URL, permissioned routes, rate limits, webhook targets, JWT lifetime, geographic and CIDR constraints — signed by a service provider. APIs built on this SDK use that metadata to authenticate peers, mint JWTs, enforce permissions, and send signed webhooks.
+
+Typical stack:
+
+- **Server** — this package: Express middleware, `POST /api/login`, session manager, outbound webhooks.
+- **Browser / wallet client** — [`@rodit/rodit-auth-fe`](https://www.npmjs.com/package/@rodit/rodit-auth-fe): NEP-413 wallet login, JWT refresh, authenticated `fetch`.
+- **Agents & integrations** — OpenClaw / Hermes plugins, [`@rodit/hola-client`](https://www.npmjs.com/package/@rodit/hola-client), [`@rodit/verify-hola`](https://www.npmjs.com/package/@rodit/verify-hola), MCP discovery on live APIs.
+
+To build a new RODiT-powered API: `npm install @rodit/rodit-auth-be`, wire `RoditClient.create('server')`, expose `/api/login`, and protect routes with `authenticate` + `authorize`. Contest-oriented native/federated try-it path: monorepo [README](../README.md#try-it--nft-login-native--federated).
 
 ## Production deployments
 
@@ -12,15 +24,25 @@ This package is the server runtime behind RODiT-powered APIs, including:
 
 | Deployment | Role |
 |------------|------|
-| [api.identyclaw.com](https://api.identyclaw.com) | IdentyClaw platform API ([source: api-idc](https://github.com/discernible-io/api-idc)) |
+| [api.identyclaw.com](https://api.identyclaw.com) | IdentyClaw platform API ([source: api-idc](https://github.com/discernible-io/api-idc)) · [MCP](https://api.identyclaw.com/.well-known/mcp) |
 | [api.lastcradle.io](https://api.lastcradle.io) | Last Cradle family API |
-| Custom / federated APIs | Same SDK; sibling APIs in one token family support [federated login](#federated-login-same-family-different-api-url) |
+| Custom / federated APIs | Same SDK; sibling APIs in one token family support [federated login](#federated-login-same-family-different-api-url) · template [api-scaffold-federated-rodit-auth](https://github.com/discernible-io/api-scaffold-federated-rodit-auth) |
 
 Browser and wallet clients for these APIs use the companion package [`@rodit/rodit-auth-fe`](https://www.npmjs.com/package/@rodit/rodit-auth-fe).
 
-**Login `POST /api/login`:** Use **`accountid`** or **`roditid`** (exactly one non-empty), exactly one of **`timestamp`** or **`timestamp_iso`**, and **`base64url_signature`**. Sign UTF-8 bytes of `identifier + timestamp_iso` (legacy) or `identifier + timestamp_iso + nonce` when a challenge `nonce` is present. Reject deprecated keys such as **`signature`** and **`account_id`**. Challenges older than `API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE` (default **300** seconds) are rejected. See [CHANGELOG.md](./CHANGELOG.md) and monorepo [TODO.md](../TODO.md) (CC-0001 residual: nonce still optional on the wire until hosts require it).
+### Related IdentyClaw stack
 
-**Current release (10.0.x):** See [CHANGELOG.md](./CHANGELOG.md) for **10.0.2** (NEAR RPC deadlines + one logged alternate), **10.0.1** (dead-code scrub), **10.0.0** (JWT peer re-verification no longer re-applies login challenge max-age to `iat`).
+| Layer | Repo / URL |
+|-------|------------|
+| This SDK monorepo | [rodit-sdk](https://github.com/discernible-io/rodit-sdk) |
+| Deploy template | [identyclaw-agents](https://github.com/discernible-io/identyclaw-agents) |
+| OpenClaw plugins | [tools](https://github.com/discernible-io/openclaw-identyclaw-plugin), [A2A](https://github.com/discernible-io/openclaw-identyclaw-a2a-plugin), [webhooks](https://github.com/discernible-io/openclaw-identyclaw-webhooks-plugin) |
+| NEAR account CLI | [gennearaccount](https://github.com/discernible-io/gennearaccount) |
+| Product / mint | [discernible.io](https://www.discernible.io) · [purchase.identyclaw.com](https://purchase.identyclaw.com) |
+
+**Login `POST /api/login`:** Use **`accountid`** or **`roditid`** (exactly one non-empty), exactly one of **`timestamp`** or **`timestamp_iso`**, and **`base64url_signature`**. Sign UTF-8 bytes of `identifier + timestamp_iso` (legacy) or `identifier + timestamp_iso + nonce` when a challenge `nonce` is present. Reject deprecated keys such as **`signature`** and **`account_id`**. Challenges older than `API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE` (default **300** seconds) are rejected. See [CHANGELOG.md](./CHANGELOG.md) and [TODO.md](./TODO.md) (CC-0001 residual: nonce still optional on the wire until hosts require it).
+
+**Current release (10.0.x):** See [CHANGELOG.md](./CHANGELOG.md) for **10.0.3** (AGPL-3.0-only), **10.0.2** (NEAR RPC deadlines + one logged alternate), **10.0.1** (dead-code scrub), **10.0.0** (JWT peer re-verification no longer re-applies login challenge max-age to `iat`).
 
 **Earlier:** Federated `login_server({ apiEndpoint })` (same SR/CR family), webhook SSRF controls, `enforceRateLimitFromClaims()` — also in [CHANGELOG.md](./CHANGELOG.md).
 
@@ -64,7 +86,7 @@ npm install @rodit/rodit-auth-be
 ```javascript
 const express = require('express');
 const { RoditClient } = require('@rodit/rodit-auth-be');
-const { setExpressSessionStore } = require('@rodit/rodit-auth-be/lib/auth/sessionmanager');
+const { setExpressSessionStore } = require('@rodit/rodit-auth-be');
 const { ulid } = require('ulid');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
@@ -229,15 +251,15 @@ export NEAR_CONTRACT_ID=discernible-io.near
 ```bash
 export NODE_ENV=main  # Environment: main, development, test
 export LOG_LEVEL=info       # Logging: error, warn, info, debug
-export API_DEFAULT_OPTIONS_DB_PATH=/app/data/database.sqlite
+# Optional host-only: API_DEFAULT_OPTIONS_DB_PATH (not an SDK FALLBACK_DEFAULTS key)
 ```
 
-**Session Configuration:**
+**Session Configuration** (SDK `FALLBACK_DEFAULTS` shown):
 ```bash
 export SESSION_STORAGE_TYPE=express-session  # Storage: memory, express, express-session
-export SESSION_CLEANUP_INTERVAL=3600000      # Cleanup interval in milliseconds (1 hour)
-export SESSION_TOKEN_RETENTION_PERIOD=604800 # Token retention in seconds (7 days)
-export SESSION_VALIDATION_CACHE_TTL=5000     # Cache TTL in milliseconds (5 seconds)
+export SESSION_CLEANUP_INTERVAL=500000       # milliseconds (SDK default)
+export SESSION_TOKEN_RETENTION_PERIOD=5000000
+export SESSION_VALIDATION_CACHE_TTL=5000     # Cache TTL in milliseconds
 ```
 
 **Logging Configuration:**
@@ -301,7 +323,8 @@ Login challenges older than `API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE` (default **3
 ```json
 {
   "jwt_token": "<jwt-token>",
-  "requestId": "01HQXYZ123ABC"
+  "requestId": "01HQXYZ123ABC",
+  "roditid": "<verified-peer-token-id>"
 }
 ```
 
@@ -319,7 +342,7 @@ Login challenges older than `API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE` (default **3
 
 Security hardening in current implementation:
 - Login challenge max-age: `validateTimestamp` enforces `API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE` (default 300 s).
-- Optional login `nonce`: when provided, bound into the signature and consumed once (`tryConsumeLoginNonce`). Hosts that omit nonce on `GET /api/login/timestamp` still allow legacy replay inside the max-age window — see [TODO.md](../TODO.md).
+- Optional login `nonce`: when provided, bound into the signature and consumed once (`tryConsumeLoginNonce`). Hosts that omit nonce on `GET /api/login/timestamp` still allow legacy replay inside the max-age window — see [TODO.md](./TODO.md).
 - JWT compact parts must be canonical base64url (non-canonical encodings are rejected).
 - Session registration is enforced during JWT validation (unknown/inactive/expired sessions are rejected).
 - Server session length defaults to `SECURITY_OPTIONS.SESSION_TTL_SECONDS` (5200 s); see [Session lifetime and TTL](#session-lifetime-and-ttl).
@@ -835,7 +858,7 @@ const express = require('express')
 const session = require('express-session')
 const SQLiteStore = require('connect-sqlite3')(session)
 const { RoditClient } = require('@rodit/rodit-auth-be')
-const { setExpressSessionStore } = require('@rodit/rodit-auth-be/lib/auth/sessionmanager')
+const { setExpressSessionStore } = require('@rodit/rodit-auth-be')
 // Configure BEFORE initializing RoditClient
 const sessionStore = new SQLiteStore({
   db: 'sessions.db',
@@ -860,7 +883,7 @@ npm install express-session connect-redis redis
 const session = require('express-session')
 const RedisStore = require('connect-redis').default
 const { createClient } = require('redis')
-const { setExpressSessionStore } = require('@rodit/rodit-auth-be/lib/auth/sessionmanager')
+const { setExpressSessionStore } = require('@rodit/rodit-auth-be')
 // Create Redis client
 const redisClient = createClient({
   url: process.env.REDIS_URL || 'redis://127.0.0.1:6379'
@@ -913,7 +936,7 @@ export SESSION_STORAGE_TYPE=express-session
 ```javascript
 const session = require('express-session')
 const SQLiteStore = require('connect-sqlite3')(session)
-const { setExpressSessionStore } = require('@rodit/rodit-auth-be/lib/auth/sessionmanager')
+const { setExpressSessionStore } = require('@rodit/rodit-auth-be')
 // Configure BEFORE initializing RoditClient
 const sessionStore = new SQLiteStore({
   db: 'sessions.db',
@@ -930,7 +953,7 @@ const client = await RoditClient.create('server')
 const session = require('express-session')
 const RedisStore = require('connect-redis').default
 const { createClient } = require('redis')
-const { setExpressSessionStore } = require('@rodit/rodit-auth-be/lib/auth/sessionmanager')
+const { setExpressSessionStore } = require('@rodit/rodit-auth-be')
 const redisClient = createClient({
   url: process.env.REDIS_URL || 'redis://127.0.0.1:6379'
 })
@@ -1199,7 +1222,7 @@ For development, credentials can be loaded from files:
 
 ```bash
 export RODIT_NEAR_CREDENTIALS_SOURCE=file
-export CREDENTIALS_FILE_PATH=./credentials/rodit-credentials.json
+export NEAR_CREDENTIALS_FILE_PATH=./credentials/rodit-credentials.json
 ```
 
 ### Accessing Configuration
@@ -1276,9 +1299,10 @@ export VAULT_ENDPOINT=https://vault.example.com
 export VAULT_ROLE_ID=your-role-id
 export VAULT_SECRET_ID=your-secret-id
 export VAULT_RODIT_KEYVALUE_PATH=secret/rodit
-export VAULT_TOKEN_TTL=3600
-// File-based credentials (development)
-export CREDENTIALS_FILEPATH=./credentials/rodit.json
+// File-based credentials (development) — read by filecredentialstoremw
+export NEAR_CREDENTIALS_FILE_PATH=./credentials/rodit.json
+// Env-based credentials when RODIT_NEAR_CREDENTIALS_SOURCE=env
+export NEAR_CREDENTIALS_JSON_B64=<base64-of-credentials-json>
 // NEAR blockchain
 export NEAR_CONTRACT_ID=discernible-io.near
 export NEAR_RPC_URL=https://rpc.mainnet.fastnear.com
@@ -1294,11 +1318,11 @@ Helpers (also on `blockchainService`): `fetchNearRpc`, `fetchWithDeadline`, `hea
 
 #### Session Management
 ```bash
-// Session storage configuration
+# Session storage configuration (SDK FALLBACK_DEFAULTS shown; override as needed)
 export SESSION_STORAGE_TYPE=express-session     # memory, express, express-session
-export SESSION_CLEANUP_INTERVAL=3600000         # milliseconds (1 hour)
-export SESSION_TOKEN_RETENTION_PERIOD=604800    # seconds (7 days)
-export SESSION_VALIDATION_CACHE_TTL=5000        # milliseconds (5 seconds)
+export SESSION_CLEANUP_INTERVAL=500000          # milliseconds (SDK default)
+export SESSION_TOKEN_RETENTION_PERIOD=5000000   # SDK default (configsdk units)
+export SESSION_VALIDATION_CACHE_TTL=5000        # milliseconds
 ```
 
 #### Logging and Monitoring
@@ -1327,10 +1351,9 @@ export SECURITY_OPTIONS_SESSION_TTL_SECONDS=5200
 export SECURITY_OPTIONS_FALLBACK_JWT_DURATION=3600
 ```
 
-#### Database Configuration
-```bash
-export API_DEFAULT_OPTIONS_DB_PATH=/app/data/database.sqlite
-```
+#### Database Configuration (host app)
+
+`API_DEFAULT_OPTIONS.DB_PATH` / `API_DEFAULT_OPTIONS_DB_PATH` is **not** an SDK default. Hosts that use SQLite (or similar) for their own app data may set it via `node-config` / env; the SDK does not ship or require it.
 
 ## Logging & Monitoring
 
@@ -1380,7 +1403,7 @@ export LOG_LEVEL=info
 export SERVICE_NAME=clienttest-idc
 ```
 
-These are already mapped in `config/custom-environment-variables.json`, so container/CI env vars will flow into the app.
+Env vars map through the SDK `config` service (`services/configsdk.js`: dotted path → `UPPER_SNAKE`). Host apps may also mirror the same names in their own `node-config` `custom-environment-variables.json`; that file is **not** shipped with this package.
 
 #### How the SDK selects/configures the logger
 
@@ -2188,7 +2211,9 @@ app.post('/api/logout', authenticateLogout, (req, res) => {
 ```javascript
 {
   message: 'Logout successful',
-  terminationToken: '<jwt-token>',  // Short-lived token
+  sessionClosed: true,
+  sessionStatus: '<status>',
+  jwt_tokenInvalidated: true,
   requestId: '01HQXYZ...'
 }
 ```
@@ -2229,7 +2254,7 @@ const fed = await roditClient.login_server({
 });
 ```
 
-**Returns:** `Promise<Object>` - Authentication result with `jwt_token`, or `{ error, errorCode, failureReason, requestId }` on failure (`FEDERATED_ISSUER_MISSING` / `FEDERATED_ISSUER_MISMATCH` for MITM failures).
+**Returns:** `Promise<Object>` — on success via `RoditClient.login_server`: `{ success: true, jwt_token, sessionId }`. On MITM / federated failure: `{ error, errorCode, failureReason, requestId }` (`FEDERATED_ISSUER_MISSING` / `FEDERATED_ISSUER_MISMATCH`).
 
 ##### logout_server()
 
@@ -2489,12 +2514,17 @@ const {
   nearorg_rpc_timestamp, // Blockchain RPC timestamp
   healthCheckRPC,        // Probe one RPC URL with deadline
   resolveHealthyNearRpcUrl, // Primary then one alternate health probe
-  fetchWithRetry         // Compat: deadline + one alternate (not multi-retry)
+  fetchWithRetry,        // Compat: deadline + one alternate (not multi-retry)
+  setExpressSessionStore,      // Inject express-session Store before RoditClient.create
+  configureStorageFromConfig,  // Apply SESSION_STORAGE_TYPE from config
+  sendError,
+  buildErrorResponse,
+  errorResponse,
+  validateConfig,        // alias of config.validate
+  extractWebhookSignerKey,
+  extractWebhookSessionId,
+  services               // { logger, sendError, buildErrorResponse, errorResponse, utils, config, performanceService }
 } = require('@rodit/rodit-auth-be')
-// Note: Session storage configuration functions are available via:
-// const { setExpressSessionStore, configureStorageFromConfig,
-  // InMemorySessionStorage }
-// = require('@rodit/rodit-auth-be/lib/auth/sessionmanager');
 ```
 
 ### RODiT Token Metadata Fields
@@ -2828,7 +2858,7 @@ export VAULT_ROLE_ID=your-role-id
 export VAULT_SECRET_ID=your-secret-id
 // For file-based credentials (development)
 export RODIT_NEAR_CREDENTIALS_SOURCE=file
-export CREDENTIALS_FILE_PATH=./credentials/rodit-credentials.json
+export NEAR_CREDENTIALS_FILE_PATH=./credentials/rodit-credentials.json
 ```
 
 **Verify configuration:**

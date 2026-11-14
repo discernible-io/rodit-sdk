@@ -2,6 +2,13 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [10.0.3] — 2026-11-14
+
+### Changed
+
+- **License:** package is now **AGPL-3.0-only** (was `UNLICENSED`). See root /
+  package [`LICENSE`](LICENSE).
+
 ## [10.0.2] — 2026-11-12
 
 ### Changed
