@@ -44,5 +44,6 @@ Thumbs.db
 *.tgz
 .yarn-integrity
 
-# Generated docs
-docs/
+# Generated docs (keep intentional hackathon evidence under docs/*.md)
+docs/**
+!docs/*.md

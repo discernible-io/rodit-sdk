@@ -1,0 +1,11 @@
+{
+  "name": "rodit-sdk-examples",
+  "private": true,
+  "description": "Runnable judge/screener scripts for the RODiT SDK monorepo",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@rodit/rodit-auth-be": "file:../rodit-auth-be"
+  }
+}

@@ -22,7 +22,9 @@ Contest entry for [NEAR HACKATHON](https://nearhackathon.com) track **NFTs That 
 | **Problem** | APIs and agents still gate trust with **API keys** and **pairwise secrets** (HMAC webhook secrets, shared keys per peer). Those credentials are not the identity: they do not move with an on-chain asset, do not prove current possession, and do not scale when every user/agent must talk to every peer. |
 | **Product** | **RODiT / IdentyClaw Passport** — a NEAR NFT credential. Possession unlocks three behaviors this SDK implements: **API login** (challenge → Ed25519 proof → JWT), **signed webhooks without HMAC**, and **mutual A2A between users without API keys**. Native login hits the Passport’s home API; federated login remints a peer JWT on a sibling API in the same token family. |
 | **How NEAR fits** | The Passport is minted and owned on NEAR (`genaaaa-identyclaw-com.near`). It is **not** a NEP-171 token. At login, servers check **on-chain** ownership over NEAR RPC before minting a session JWT. API login uses the Passport key (`@rodit/rodit-auth-be`). **NEP-413** is only the dApp alternative (`@rodit/rodit-auth-fe`). Moving the RODiT to another account moves login, webhook, and A2A rights with it. See [Ownership and transfer](#ownership-and-transfer-not-nep-171). |
-| **Try it** | Judges / AI screeners: follow [Try it — NFT login](#try-it--nft-login-native--federated) (**Do** → **See**). That path proves the possession gate that everything else builds on. Mint at [purchase.identyclaw.com](https://purchase.identyclaw.com) with **1 month** longevity for minimum cost. |
+| **Try it** | Judges / AI screeners: follow [Try it](#try-it--nft-login-native--federated) (**Do** → **See**), including **Step 3 transfer**. Mint at [purchase.identyclaw.com](https://purchase.identyclaw.com) with **1 month** longevity (~**0.08 NEAR** recent mainnet minimum; UI quotes exact). |
+| **On-chain evidence** | Mint + login (RPC ownership check) + transfer explorer links: [docs/ONCHAIN.md](docs/ONCHAIN.md) |
+| **Track mapping** | Point-by-point vs [tracks/10-nfts.md](https://github.com/nearai/near-hackathon-prompt-examples/blob/main/tracks/10-nfts.md): [docs/TRACK-NFTS.md](docs/TRACK-NFTS.md) |
 | **Submission repo** | **This repository only** (`projectUrl`). Links below are supporting code — not separate contest entries. |
 
 Also selecting related tracks is reasonable: `security` (possession-gated access, no shared webhook secrets), `agents` (mutual A2A without API keys).
@@ -59,7 +61,7 @@ Holding a RODiT Passport is the credential. No shared API key, no per-peer HMAC 
 | **Signed webhooks without HMAC** | Outbound webhooks signed with a shared HMAC secret you must provision and rotate per destination | Outbound webhooks are **Ed25519-signed**; the signer’s public key / implicit account travels on the request (`X-Rodit-Public-Key`, `X-Rodit-Implicit-Account`, `X-Signature`). Receiver verifies the signature and binds it to a live login session — **no shared webhook secret**. SDK: [Webhooks](rodit-auth-be/README.md#webhooks). Agents: [openclaw-identyclaw-webhooks-plugin](https://github.com/discernible-io/openclaw-identyclaw-webhooks-plugin), [hermes-identyclaw-webhook](https://github.com/discernible-io/hermes-identyclaw-webhook) |
 | **Mutual A2A without API keys** | Agent A and agent B each need the other’s API key (or a broker) before they can talk | Two Passport holders log into each other’s APIs (native or federated) with the same possession proof. Mutual auth is **RODiT ↔ RODiT**, not key exchange. Agents: [openclaw-identyclaw-a2a-plugin](https://github.com/discernible-io/openclaw-identyclaw-a2a-plugin), [hermes-identyclaw-a2a](https://github.com/discernible-io/hermes-identyclaw-a2a). Demo: [lastcradle.io](https://lastcradle.io) |
 
-**Why login is the reproducible demo:** Steps 0–2 below are the possession gate AI screeners can run from this README alone. Webhooks and A2A reuse that same session (JWT + Ed25519 identity); they are not separate credential systems.
+**Why login + transfer are the reproducible demo:** Steps 0–2 are the possession gate; Step 3 shows that gate **moves** with the NFT. Webhooks and A2A reuse that same session (JWT + Ed25519 identity); they are not separate credential systems.
 
 **Agent hosts that use this SDK** (supporting repos — not separate submissions):
 
@@ -86,7 +88,8 @@ Reproduce from this README alone (HACKATHON.md Q-017):
 1. Run **Step 0** (no secrets) — expect challenge JSON and `401 MISSING_TOKEN` on `/api/me/identity`.
 2. With a Passport from [purchase.identyclaw.com](https://purchase.identyclaw.com) (**1 month**), run **Step 1** — expect home `jwt_token` and **200** on `/api/me/identity`; claim `rodit_subjectuniqueidentifier_url` is `null`.
 3. Run **Step 2** — expect peer `jwt_token`, peer JWT rejected on home, **200** on peer `/api/token/claims`; claim `rodit_subjectuniqueidentifier_url` is the peer URL.
-4. Confirm NEAR role: ownership checked on-chain at login. The contract is not NEP-171. API login uses the Passport key; NEP-413 is only the dApp alternative. Moving the RODiT is `rodit_transfer` to another account — see [Ownership and transfer](#ownership-and-transfer-not-nep-171).
+4. Run **Step 3** (transfer) — after `rodit_transfer`, old owner login rejected, new owner login accepted. Explorer trail: [docs/ONCHAIN.md](docs/ONCHAIN.md).
+5. Confirm NEAR role: ownership checked on-chain at login. The contract is not NEP-171. API login uses the Passport key; NEP-413 is only the dApp alternative.
 
 ## Try it — NFT login (native + federated)
 
@@ -102,11 +105,13 @@ Primary path for human judges and AI screeners. Each step is **Do** (commands) �
 |------|-----|
 | Node.js 20+ | Local machine |
 | An IdentyClaw Passport (NEAR NFT) + its key | Buy/mint at [purchase.identyclaw.com](https://purchase.identyclaw.com) · contract `genaaaa-identyclaw-com.near` |
-| SDK packages | From this repo or npm `@rodit/rodit-auth-be@10.0.3` |
+| Expected **minimum mint cost** | Longevity **1 month** → recent mainnet mints from ~**0.08 NEAR** attached deposit (example: [B38u9un…](https://nearblocks.io/txns/B38u9unSqXPep3V7ATqJKjfEUdEPhSKCE5KZpdjbXvq8)); the purchase UI shows the exact quote before you pay. Immortal / multi-year is much more. |
+| Transfer deposit (Step 3) | Exactly **0.01 NEAR** attached to `rodit_transfer` |
+| SDK packages | `cd examples && npm install` (local `@rodit/rodit-auth-be@10.0.3`) or npm |
 
-**Judges — cheapest mint for Steps 1–2:** open [purchase.identyclaw.com](https://purchase.identyclaw.com), complete the Passport form, and set longevity to **1 month** (not immortal / multi-year) so the on-chain mint fee is the **minimum**. Pay in NEAR, receive the Passport on the NEAR account you paste as recipient, then put that account’s key material in `NEAR_CREDENTIALS_FILE_PATH` below. One Passport is enough for both native (Step 1) and federated (Step 2) login.
+**Judges — cheapest path for Steps 1–3:** open [purchase.identyclaw.com](https://purchase.identyclaw.com), set longevity to **1 month**, pay the quoted NEAR, receive the Passport on the recipient account, put that account’s key material in `NEAR_CREDENTIALS_FILE_PATH` below. One Passport covers native, federated, and transfer. There is no shared public demo Passport (keys would be burned immediately); Step 0 needs none.
 
-Credential file for the client (path is yours; do not commit secrets):
+Credential file for the client (path is yours; do not commit secrets). Shape: `{ "implicit_account_id", "private_key", "public_key" }` — same fields as a `~/.near-credentials/mainnet/<account>.json` key file:
 
 ```bash
 export RODIT_NEAR_CREDENTIALS_SOURCE=file
@@ -115,7 +120,7 @@ export NEAR_CONTRACT_ID=genaaaa-identyclaw-com.near
 export NEAR_RPC_URL=https://rpc.mainnet.fastnear.com
 ```
 
-Package layout for `NEAR_CREDENTIALS_FILE_PATH`: [rodit-auth-be/README.md](rodit-auth-be/README.md) (file-based credentials). Dual-login harness: [api-test-scaffold](https://github.com/discernible-io/api-test-scaffold). Peer template: [api-scaffold-federated-rodit-auth](https://github.com/discernible-io/api-scaffold-federated-rodit-auth).
+More on file credentials: [rodit-auth-be/README.md](rodit-auth-be/README.md). Dual-login harness: [api-test-scaffold](https://github.com/discernible-io/api-test-scaffold). Peer template: [api-scaffold-federated-rodit-auth](https://github.com/discernible-io/api-scaffold-federated-rodit-auth). Wallet helper for transfers: [`../infra/idcp-wallet.sh`](https://github.com/discernible-io/infra) (or plugin copies) — see [examples/transfer-proof.sh](examples/transfer-proof.sh).
 
 ### Step 0 — no secrets (challenge only)
 
@@ -143,31 +148,7 @@ Home API: `https://api.identyclaw.com` (Passport `subjectuniqueidentifier_url`).
 **Do:**
 
 ```bash
-cd rodit-auth-be && npm install
-```
-
-```javascript
-// native-login.js — run from rodit-auth-be after setting NEAR_CREDENTIALS_FILE_PATH
-const { RoditClient } = require("@rodit/rodit-auth-be");
-
-(async () => {
-  const client = await RoditClient.create("client");
-  // omit apiEndpoint → login to this Passport's home subjectuniqueidentifier_url
-  const home = await client.login_server();
-  if (home.error) {
-    console.error("native login failed", home);
-    process.exit(1);
-  }
-  console.log("native jwt_token length", home.jwt_token.length);
-
-  const me = await fetch("https://api.identyclaw.com/api/me/identity", {
-    headers: { Authorization: `Bearer ${home.jwt_token}` },
-  });
-  console.log("GET /api/me/identity", me.status, await me.json());
-})();
-```
-
-```bash
+cd examples && npm install
 node native-login.js
 ```
 
@@ -175,7 +156,7 @@ node native-login.js
 
 - `login_server()` returns `{ jwt_token: "…" }` (not an error object).
 - `GET /api/me/identity` → **200** with identity claims for the Passport holder.
-- Decode the JWT payload (middle segment, base64url): `rodit_subjectuniqueidentifier_url` is **`null`** (same-API / native login).
+- Claim `rodit_subjectuniqueidentifier_url` is **`null`** (same-API / native login).
 
 ### Step 2 — federated login (sibling API, same NFT)
 
@@ -183,36 +164,8 @@ Federated peer example (same SR/CR family): `https://api.lastcradle.io`. Reuse t
 
 **Do:**
 
-```javascript
-// federated-login.js
-const { RoditClient } = require("@rodit/rodit-auth-be");
-
-const PEER = "https://api.lastcradle.io";
-
-(async () => {
-  const client = await RoditClient.create("client");
-  const fed = await client.login_server({ apiEndpoint: PEER });
-  if (fed.error) {
-    console.error("federated login failed", fed);
-    process.exit(1);
-  }
-  console.log("federated jwt_token length", fed.jwt_token.length);
-
-  // Peer JWTs are not valid on home without re-login — expect failure:
-  const onHome = await fetch("https://api.identyclaw.com/api/me/identity", {
-    headers: { Authorization: `Bearer ${fed.jwt_token}` },
-  });
-  console.log("peer JWT on home /api/me/identity", onHome.status);
-
-  const claims = await fetch(`${PEER}/api/token/claims`, {
-    headers: { Authorization: `Bearer ${fed.jwt_token}` },
-  });
-  console.log("GET peer /api/token/claims", claims.status, await claims.json());
-})();
-```
-
 ```bash
-node federated-login.js
+cd examples && node federated-login.js
 ```
 
 **See:**
@@ -222,7 +175,46 @@ node federated-login.js
 - `GET https://api.lastcradle.io/api/token/claims` with the peer JWT → **200**.
 - JWT claim `rodit_subjectuniqueidentifier_url` is the **peer URL** (non-null). MITM mismatches: `FEDERATED_ISSUER_MISSING` / `FEDERATED_ISSUER_MISMATCH` — see [rodit-auth-be README](rodit-auth-be/README.md).
 
-### Step 3 — optional: dual-login test harness
+### Step 3 — transfer proof (rights follow the new owner)
+
+This is the NFT behavior the track cares about: move the Passport, and login (and therefore webhook / A2A rights) follow. Recorded mainnet txs with explorer links: [docs/ONCHAIN.md](docs/ONCHAIN.md). Helper: [examples/transfer-proof.sh](examples/transfer-proof.sh) (wraps `idcp-wallet.sh`).
+
+**Do:**
+
+1. Confirm current ownership and that **Step 1** login still works with the current owner’s credentials.
+2. Create or fund a second NEAR account (receiver). With `idcp-wallet.sh`: `gennearaccount`, then `<funding> <new> init` (0.01 NEAR).
+3. Transfer (exactly **0.01 NEAR** deposit) — either:
+
+```bash
+# from repo-adjacent infra, or set IDCP_WALLET to a plugin copy
+export BLOCKCHAIN_ENV=mainnet RODITCONTRACTID=genaaaa-identyclaw-com.near
+../infra/idcp-wallet.sh <current-owner> <new-owner> <token_id>
+```
+
+```bash
+near call genaaaa-identyclaw-com.near rodit_transfer \
+  '{"receiver_id":"<new-owner>","token_id":"<token_id>","memo":null}' \
+  --accountId <current-owner> \
+  --amount 0.01
+```
+
+4. View the token, then retry login with **old** credentials, then with **new** credentials:
+
+```bash
+near view genaaaa-identyclaw-com.near rodit_token '{"token_id":"<token_id>"}'
+# point NEAR_CREDENTIALS_FILE_PATH at the OLD owner key → node examples/native-login.js
+# point NEAR_CREDENTIALS_FILE_PATH at the NEW owner key → node examples/native-login.js
+```
+
+**See:**
+
+- `rodit_token.owner_id` is **`<new-owner>`** (explorer: open the transfer tx, e.g. [8EVhcSuf…](https://nearblocks.io/txns/8EVhcSufsvC9WdiUPG1k4v12BtVwzpxE3hryMBGXzkYF) / [AAfwDNWZ…](https://nearblocks.io/txns/AAfwDNWZbqxNGUSBtyqzYvFCFoyF42pR7byGP5GQV1y9) in [ONCHAIN.md](docs/ONCHAIN.md)).
+- Old owner `native-login.js` → **rejected** (previous owner’s request refused — no longer on-chain owner).
+- New owner `native-login.js` → **JWT** and **200** on `/api/me/identity` (rights followed the NFT).
+
+Optional: transfer back the same way so you keep the Passport.
+
+### Step 4 — optional: dual-login test harness
 
 **Do:** clone and run [api-test-scaffold](https://github.com/discernible-io/api-test-scaffold) on branch `main` or `development` (suite `authenticationComprehensive`).
 
