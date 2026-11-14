@@ -31,13 +31,13 @@ Also selecting related tracks is reasonable: `security` (possession-gated access
 
 ### Ownership and transfer (not NEP-171)
 
-The Passport contract is [mintcontract-idc](https://github.com/discernible-io/mintcontract-idc) at `genaaaa-identyclaw-com.near`. It does **not** implement NEP-171. There is no `nft_transfer` / `nft_token`. Ownership and transfer use the contract’s own methods: `rodit_token`, `rodit_tokens_for_owner`, and `rodit_transfer`.
+The Passport contract is [mintcontract-idc](https://github.com/discernible-io/mintcontract-idc) at `genaaaa-identyclaw-com.near`. It does **not** implement NEP-171. There is no `nft_transfer` / `nft_token`. Ownership and transfer use the contract’s own methods: `rodit_token`, `rodit_tokens_for_owner`, and `rodit_transfer`. After mint, the only mutable on-chain facts are **owner** and **existence**; login and other possession proofs check the owner recorded **now**, not at issuance.
 
-**API login.** The usual path, including [Try it](#try-it--nft-login-native--federated), signs the login challenge with the Passport key through `@rodit/rodit-auth-be`. The server loads the token (`rodit_token`) and checks that signature against the current owner before it mints a JWT.
+**API login.** The usual path, including [Try it](#try-it--nft-login-native--federated), signs the login challenge with the Passport key through `@rodit/rodit-auth-be`. The server loads the token (`rodit_token`) and checks that signature against the current owner before it mints a JWT. Wire detail (challenge → sign → `POST /api/login` → JWT / federated remint): live guide [`doc:reference:login-authentication`](https://api.identyclaw.com/api/mcp/resource/doc:reference:login-authentication).
 
 **NEP-413 is a dApp-only alternative for that same API login.** It is not how agents, servers, or the Try it steps authenticate. A dApp using [`@rodit/rodit-auth-fe`](rodit-auth-fe/README.md) calls `login_server_withnep413`: the page reads tokens for the connected account (`rodit_tokens_for_owner`), the wallet signs the token id under NEP-413 (message, nonce, recipient, callback URL), and the API checks that signature against the current owner. Success mints the same kind of session JWT.
 
-**Moving a RODiT to another account.** The current owner calls `rodit_transfer` and names the new NEAR account as `receiver_id`. The contract accepts the call only from the current `owner_id`, requires exactly **0.01 NEAR** attached, then sets `owner_id` to that receiver. After the call, `rodit_tokens_for_owner` lists the Passport under the new account, and the next login — Passport key or dApp NEP-413 — has to come from that account. The previous account no longer owns the token, so its proof fails. No second mint: the same token id moves.
+**Moving a RODiT to another account.** The current owner calls `rodit_transfer` and names the new NEAR account as `receiver_id`. The contract accepts the call only from the current `owner_id`, requires exactly **0.01 NEAR** attached, then sets `owner_id` to that receiver. After the call, `rodit_tokens_for_owner` lists the Passport under the new account, and the next login — Passport key or dApp NEP-413 — has to come from that account. The previous account no longer owns the token, so its proof fails. No second mint: the same token id moves. Same procedure as **key rotation** (transfer custody, keep the 12-letter Passport id): [`doc:reference:key-rotation`](https://api.identyclaw.com/api/mcp/resource/doc:reference:key-rotation) · FAQ in [`doc:reference:pricing-philosophy`](https://api.identyclaw.com/api/mcp/resource/doc:reference:pricing-philosophy).
 
 ```bash
 near call genaaaa-identyclaw-com.near rodit_transfer \
@@ -177,7 +177,7 @@ cd examples && node federated-login.js
 
 ### Step 3 — transfer proof (rights follow the new owner)
 
-This is the NFT behavior the track cares about: move the Passport, and login (and therefore webhook / A2A rights) follow. Recorded mainnet txs with explorer links: [docs/ONCHAIN.md](docs/ONCHAIN.md). Helper: [examples/transfer-proof.sh](examples/transfer-proof.sh) (wraps `idcp-wallet.sh`).
+This is the NFT behavior the track cares about: move the Passport, and login (and therefore webhook / A2A rights) follow. Same on-chain procedure as [key rotation](https://api.identyclaw.com/api/mcp/resource/doc:reference:key-rotation) (transfer custody; Passport id unchanged). Recorded mainnet txs: [docs/ONCHAIN.md](docs/ONCHAIN.md). Helper: [examples/transfer-proof.sh](examples/transfer-proof.sh) (wraps `idcp-wallet.sh`).
 
 **Do:**
 
