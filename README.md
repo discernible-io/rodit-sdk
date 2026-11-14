@@ -21,11 +21,33 @@ Contest entry for [NEAR HACKATHON](https://nearhackathon.com) track **NFTs That 
 |---|---|
 | **Problem** | APIs and agents still gate trust with **API keys** and **pairwise secrets** (HMAC webhook secrets, shared keys per peer). Those credentials are not the identity: they do not move with an on-chain asset, do not prove current possession, and do not scale when every user/agent must talk to every peer. |
 | **Product** | **RODiT / IdentyClaw Passport** — a NEAR NFT credential. Possession unlocks three behaviors this SDK implements: **API login** (challenge → Ed25519 proof → JWT), **signed webhooks without HMAC**, and **mutual A2A between users without API keys**. Native login hits the Passport’s home API; federated login remints a peer JWT on a sibling API in the same token family. |
-| **How NEAR fits** | The Passport is minted and owned on NEAR (`genaaaa-identyclaw-com.near`). At login, servers check **on-chain** RODiT ownership and metadata over NEAR RPC before minting a session JWT. Transfer the NFT and login / webhook / A2A rights follow the new owner — ownership with behavior, not a JPEG. |
+| **How NEAR fits** | The Passport is minted and owned on NEAR (`genaaaa-identyclaw-com.near`). It is **not** a NEP-171 token. At login, servers check **on-chain** ownership over NEAR RPC before minting a session JWT. API login uses the Passport key (`@rodit/rodit-auth-be`). **NEP-413** is only the dApp alternative (`@rodit/rodit-auth-fe`). Moving the RODiT to another account moves login, webhook, and A2A rights with it. See [Ownership and transfer](#ownership-and-transfer-not-nep-171). |
 | **Try it** | Judges / AI screeners: follow [Try it — NFT login](#try-it--nft-login-native--federated) (**Do** → **See**). That path proves the possession gate that everything else builds on. Mint at [purchase.identyclaw.com](https://purchase.identyclaw.com) with **1 month** longevity for minimum cost. |
 | **Submission repo** | **This repository only** (`projectUrl`). Links below are supporting code — not separate contest entries. |
 
 Also selecting related tracks is reasonable: `security` (possession-gated access, no shared webhook secrets), `agents` (mutual A2A without API keys).
+
+### Ownership and transfer (not NEP-171)
+
+The Passport contract is [mintcontract-idc](https://github.com/discernible-io/mintcontract-idc) at `genaaaa-identyclaw-com.near`. It does **not** implement NEP-171. There is no `nft_transfer` / `nft_token`. Ownership and transfer use the contract’s own methods: `rodit_token`, `rodit_tokens_for_owner`, and `rodit_transfer`.
+
+**API login.** The usual path, including [Try it](#try-it--nft-login-native--federated), signs the login challenge with the Passport key through `@rodit/rodit-auth-be`. The server loads the token (`rodit_token`) and checks that signature against the current owner before it mints a JWT.
+
+**NEP-413 is a dApp-only alternative for that same API login.** It is not how agents, servers, or the Try it steps authenticate. A dApp using [`@rodit/rodit-auth-fe`](rodit-auth-fe/README.md) calls `login_server_withnep413`: the page reads tokens for the connected account (`rodit_tokens_for_owner`), the wallet signs the token id under NEP-413 (message, nonce, recipient, callback URL), and the API checks that signature against the current owner. Success mints the same kind of session JWT.
+
+**Moving a RODiT to another account.** The current owner calls `rodit_transfer` and names the new NEAR account as `receiver_id`. The contract accepts the call only from the current `owner_id`, requires exactly **0.01 NEAR** attached, then sets `owner_id` to that receiver. After the call, `rodit_tokens_for_owner` lists the Passport under the new account, and the next login — Passport key or dApp NEP-413 — has to come from that account. The previous account no longer owns the token, so its proof fails. No second mint: the same token id moves.
+
+```bash
+near call genaaaa-identyclaw-com.near rodit_transfer \
+  '{"receiver_id":"<new-account>.near","token_id":"<token_id>","memo":null}' \
+  --accountId <current-owner> \
+  --amount 0.01
+
+near view genaaaa-identyclaw-com.near rodit_token \
+  '{"token_id":"<token_id>"}'
+```
+
+`rodit_token` then shows `owner_id` as `<new-account>.near`.
 
 ### What the NFT unlocks (capabilities judges should see)
 
@@ -64,7 +86,7 @@ Reproduce from this README alone (HACKATHON.md Q-017):
 1. Run **Step 0** (no secrets) — expect challenge JSON and `401 MISSING_TOKEN` on `/api/me/identity`.
 2. With a Passport from [purchase.identyclaw.com](https://purchase.identyclaw.com) (**1 month**), run **Step 1** — expect home `jwt_token` and **200** on `/api/me/identity`; claim `rodit_subjectuniqueidentifier_url` is `null`.
 3. Run **Step 2** — expect peer `jwt_token`, peer JWT rejected on home, **200** on peer `/api/token/claims`; claim `rodit_subjectuniqueidentifier_url` is the peer URL.
-4. Confirm NEAR role: ownership checked on-chain at login.
+4. Confirm NEAR role: ownership checked on-chain at login. The contract is not NEP-171. API login uses the Passport key; NEP-413 is only the dApp alternative. Moving the RODiT is `rodit_transfer` to another account — see [Ownership and transfer](#ownership-and-transfer-not-nep-171).
 
 ## Try it — NFT login (native + federated)
 
@@ -72,7 +94,7 @@ Primary path for human judges and AI screeners. Each step is **Do** (commands) �
 
 **Product:** a RODiT / IdentyClaw Passport is a NEAR NFT credential. Possession unlocks API login (and, with that session, Ed25519 webhooks without HMAC and mutual A2A without API keys). Native login mints a JWT on the Passport’s home API; federated login **remints** a new JWT on a sibling API in the same token family (home JWTs are not portable).
 
-**NEAR:** at login the server checks on-chain RODiT ownership / metadata (via NEAR RPC) before issuing a session JWT.
+**NEAR:** at login the server checks on-chain RODiT ownership / metadata (via NEAR RPC) before issuing a session JWT. These steps use the Passport key. The contract is not NEP-171. NEP-413 is only an alternative API login from a dApp, and giving the Passport to someone else is a `rodit_transfer` to their account ([Ownership and transfer](#ownership-and-transfer-not-nep-171)).
 
 ### Prerequisites
 
