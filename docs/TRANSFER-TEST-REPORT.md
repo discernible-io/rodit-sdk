@@ -16,7 +16,7 @@ Source run also recorded in [api-test-scaffold `development`](https://github.com
 | **API host** | `https://api.identyclaw.com` |
 | **From (old owner)** | `24c0ecfe…90c4c3c3` |
 | **To (new owner)** | `2e936b69…d53ee552` (disposable implicit account created for this run) |
-| **Tools** | `examples/native-login-probe.js`, `infra/idcp-wallet.sh` / `near-cli-rs`, public RPC `mainnet-fastnear` |
+| **Tools** | `examples/native-login-probe.js`, `scripts/idcp-wallet.sh` / `near-cli-rs`, public RPC `mainnet-fastnear` |
 | **Secrets** | **No keys committed.** Credentials stayed under `~/.near-credentials/mainnet/` only. Report lists truncated account ids, JWT `jti`, HTTP statuses, and explorer hashes — never JWTs or private keys. |
 
 Round-trip: Passport returned to the original owner after the login pairing (step 6).
@@ -34,10 +34,10 @@ Round-trip: Passport returned to the original owner after the login pairing (ste
 
 ## How to re-run (judges)
 
-1. Create/fund a disposable destination implicit account (`idcp-wallet.sh gennearaccount`, then fund ≥ ~0.025 NEAR).
+1. Create/fund a disposable destination implicit account (`./scripts/idcp-wallet.sh gennearaccount`, then fund ≥ ~0.025 NEAR).
 2. Ensure the current owner can cover `rodit_transfer` (0.01 NEAR deposit + gas; ~0.025–0.035 NEAR balance recommended with 10–15 Tgas).
 3. `NEAR_CREDENTIALS_FILE_PATH=… node examples/native-login-probe.js` as current owner (expect PASS).
-4. `rodit_transfer` via `idcp-wallet.sh <from> <to> <token_id>` (or `near contract call-function … rodit_transfer`).
+4. `rodit_transfer` via `./scripts/idcp-wallet.sh <from> <to> <token_id>` (or `near contract call-function … rodit_transfer` on `genaaaa-identyclaw-com.near`).
 5. Re-login as **old** (expect FAIL) and **new** (expect PASS).
 6. Transfer back when done.
 

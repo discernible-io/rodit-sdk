@@ -121,7 +121,7 @@ export NEAR_CONTRACT_ID=genaaaa-identyclaw-com.near
 export NEAR_RPC_URL=https://rpc.mainnet.fastnear.com
 ```
 
-More on file credentials: [rodit-auth-be/README.md](rodit-auth-be/README.md). Dual-login harness: [api-test-scaffold](https://github.com/discernible-io/api-test-scaffold). Peer template: [api-scaffold-federated-rodit-auth](https://github.com/discernible-io/api-scaffold-federated-rodit-auth). Wallet helper for transfers: [`../infra/idcp-wallet.sh`](https://github.com/discernible-io/infra) (or plugin copies) — see [examples/transfer-proof.sh](examples/transfer-proof.sh).
+More on file credentials: [rodit-auth-be/README.md](rodit-auth-be/README.md). Dual-login harness: [api-test-scaffold](https://github.com/discernible-io/api-test-scaffold). Peer template: [api-scaffold-federated-rodit-auth](https://github.com/discernible-io/api-scaffold-federated-rodit-auth). Wallet helper for transfers: [scripts/idcp-wallet.sh](scripts/idcp-wallet.sh) (contract `genaaaa-identyclaw-com.near`) — see [examples/transfer-proof.sh](examples/transfer-proof.sh).
 
 ### Step 0 — no secrets (challenge only)
 
@@ -180,18 +180,17 @@ cd examples && node federated-login.js
 
 Recorded run → [TRANSFER-TEST-REPORT.md](docs/TRANSFER-TEST-REPORT.md); hashes → [ONCHAIN.md](docs/ONCHAIN.md).
 
-This is the NFT behavior the track cares about: move the Passport, and login (and therefore webhook / A2A rights) follow. Same on-chain procedure as [key rotation](https://api.identyclaw.com/api/mcp/resource/doc:reference:key-rotation) (transfer custody; Passport id unchanged). Helpers: [examples/transfer-proof.sh](examples/transfer-proof.sh), [examples/native-login-probe.js](examples/native-login-probe.js) (prints `jti` / statuses only; no secrets).
+This is the NFT behavior the track cares about: move the Passport, and login (and therefore webhook / A2A rights) follow. Same on-chain procedure as [key rotation](https://api.identyclaw.com/api/mcp/resource/doc:reference:key-rotation) (transfer custody; Passport id unchanged). Helpers: [scripts/idcp-wallet.sh](scripts/idcp-wallet.sh) (`genaaaa-identyclaw-com.near`), [examples/transfer-proof.sh](examples/transfer-proof.sh), [examples/native-login-probe.js](examples/native-login-probe.js) (prints `jti` / statuses only; no secrets).
 
 **Do:**
 
 1. Confirm current ownership and that **Step 1** login still works with the current owner’s credentials.
-2. Create or fund a second NEAR account (receiver). With `idcp-wallet.sh`: `gennearaccount`, then `<funding> <new> init` (0.01 NEAR).
+2. Create or fund a second NEAR account (receiver). With [scripts/idcp-wallet.sh](scripts/idcp-wallet.sh): `./scripts/idcp-wallet.sh gennearaccount`, then `./scripts/idcp-wallet.sh <funding> <new> init` (0.01 NEAR).
 3. Transfer (exactly **0.01 NEAR** deposit) — either:
 
 ```bash
-# from repo-adjacent infra, or set IDCP_WALLET to a plugin copy
-export BLOCKCHAIN_ENV=mainnet RODITCONTRACTID=genaaaa-identyclaw-com.near
-../infra/idcp-wallet.sh <current-owner> <new-owner> <token_id>
+export BLOCKCHAIN_ENV=mainnet
+./scripts/idcp-wallet.sh <current-owner> <new-owner> <token_id>
 ```
 
 ```bash

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Step 3 — transfer the Passport, then prove old owner login fails and new owner login works.
 #
-# Uses idcp-wallet.sh (from ../infra or IDCP_WALLET) for the on-chain rodit_transfer.
+# Uses scripts/idcp-wallet.sh (or IDCP_WALLET) for the on-chain rodit_transfer.
 # Does not move any token unless you pass --execute with real account ids.
 #
 # Usage (dry-run docs only):
@@ -9,7 +9,6 @@
 #
 # Usage (you supply two funded accounts + a token you own):
 #   export BLOCKCHAIN_ENV=mainnet
-#   export RODITCONTRACTID=genaaaa-identyclaw-com.near
 #   export NEAR_NETWORK_CONFIG=mainnet-fastnear
 #   ./examples/transfer-proof.sh --execute \
 #     --from <current-owner-implicit-or-named> \
@@ -17,13 +16,13 @@
 #     --token <token_id>
 #
 # After --execute, point NEAR_CREDENTIALS_FILE_PATH at each account's key file and run:
-#   node examples/native-login.js
+#   node examples/native-login-probe.js
 # Expect: --from fails (no longer owner); --to succeeds.
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WALLET="${IDCP_WALLET:-$ROOT/../infra/idcp-wallet.sh}"
+WALLET="${IDCP_WALLET:-$ROOT/scripts/idcp-wallet.sh}"
 CONTRACT="${RODITCONTRACTID:-genaaaa-identyclaw-com.near}"
 
 FROM=""
@@ -51,25 +50,27 @@ echo
 
 if [[ ! -x "$WALLET" && ! -f "$WALLET" ]]; then
   echo "idcp-wallet.sh not found at $WALLET"
-  echo "Set IDCP_WALLET to the script from discernible-io/infra or a plugin repo."
+  echo "Expected scripts/idcp-wallet.sh in this repo, or set IDCP_WALLET."
   exit 1
 fi
 
-cat <<'EOF'
+cat <<EOF
 Do → See (transfer proof)
 -------------------------
-1. Login as current owner (examples/native-login.js) → JWT + 200 on /api/me/identity.
+Contract: $CONTRACT (scripts/idcp-wallet.sh default)
+
+1. Login as current owner (examples/native-login-probe.js) → JWT + 200 on /api/me/identity.
 2. Transfer with wallet script (0.01 NEAR deposit):
-     $IDCP_WALLET <from> <to> <token_id>
+     ./scripts/idcp-wallet.sh <from> <to> <token_id>
    or:
-     near call genaaaa-identyclaw-com.near rodit_transfer \
-       '{"receiver_id":"<to>","token_id":"<token_id>","memo":null}' \
+     near call $CONTRACT rodit_transfer \\
+       '{"receiver_id":"<to>","token_id":"<token_id>","memo":null}' \\
        --accountId <from> --amount 0.01
 3. near view … rodit_token → owner_id is <to>.
 4. Login again with <from> credentials → rejected (no longer on-chain owner).
 5. Login with <to> credentials → JWT accepted (rights followed the NFT).
 
-Recorded explorer txs for a prior real transfer: see docs/ONCHAIN.md.
+Recorded run: docs/TRANSFER-TEST-REPORT.md · hashes: docs/ONCHAIN.md
 EOF
 
 if [[ "$EXECUTE" -ne 1 ]]; then
