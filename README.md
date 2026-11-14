@@ -64,29 +64,7 @@ Reproduce from this README alone (HACKATHON.md Q-017):
 1. Run **Step 0** (no secrets) — expect challenge JSON and `401 MISSING_TOKEN` on `/api/me/identity`.
 2. With a Passport from [purchase.identyclaw.com](https://purchase.identyclaw.com) (**1 month**), run **Step 1** — expect home `jwt_token` and **200** on `/api/me/identity`; claim `rodit_subjectuniqueidentifier_url` is `null`.
 3. Run **Step 2** — expect peer `jwt_token`, peer JWT rejected on home, **200** on peer `/api/token/claims`; claim `rodit_subjectuniqueidentifier_url` is the peer URL.
-4. Confirm NEAR role: ownership checked on-chain at login. Baseline vs window: section below.
-
-## NEAR Hackathon — baseline vs window work
-
-This repository is an existing product. Per [NEAR HACKATHON](https://nearhackathon.com/HACKATHON.md) Q-001–Q-005, only work in the announcement→deadline window is judged; earlier commits are **baseline**.
-
-| Marker | Value |
-|--------|--------|
-| **Baseline** (last commit before the window) | [`6105026`](https://github.com/discernible-io/rodit-sdk/commit/6105026fe8151422df543345a7d887e3299d6ffb) — 2026-10-13 |
-| **Window** | 2026-10-19 (announcement) → 2026-11-14 23:59 UTC |
-| **Diff (baseline → window tip on `main`)** | [compare `6105026…bcf6fac`](https://github.com/discernible-io/rodit-sdk/compare/6105026fe8151422df543345a7d887e3299d6ffb...bcf6face586172c36dd628264e3c92b6c83463da) |
-| **Window tip cited here** | [`bcf6fac`](https://github.com/discernible-io/rodit-sdk/commit/bcf6face586172c36dd628264e3c92b6c83463da) — 2026-11-12 (`@rodit/rodit-auth-be` **10.0.2**; later local bumps include **10.0.3** AGPL) |
-
-**In-window work judged for this entry** (login / NEAR reliability on the NFT→API path), also detailed in [rodit-auth-be/CHANGELOG.md](rodit-auth-be/CHANGELOG.md):
-
-- **9.17.2 / 9.17.4** — login challenge max-age; `POST /api/login` accepts exactly one of `timestamp` or `timestamp_iso`
-- **10.0.0** — Bearer JWT peer re-verification no longer re-applies login-challenge max-age to JWT `iat`
-- **10.0.1** — dead-code scrub
-- **10.0.2** — NEAR RPC deadlines + one logged alternate endpoint
-- **10.0.3** — AGPL-3.0-only license on published packages
-- Supporting: Gitleaks config; `@rodit/verify-hola` / `@rodit/hola-client` releases in the same window
-
-Pre-window libraries and APIs (RODiT mint, native/federated login spine, HOLA packages) remain baseline.
+4. Confirm NEAR role: ownership checked on-chain at login.
 
 ## Try it — NFT login (native + federated)
 
