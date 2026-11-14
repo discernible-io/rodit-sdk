@@ -222,6 +222,18 @@ Optional: transfer back the same way so you keep the Passport.
 
 **See:** home + federated login assertions pass in the deployment test report.
 
+### Live surfaces — this is a production system, not a prototype
+
+| Surface | What you get |
+|---|---|
+| [api.identyclaw.com](https://api.identyclaw.com) · [purchase.identyclaw.com](https://purchase.identyclaw.com) · [verify.identyclaw.com](https://verify.identyclaw.com) | The production APIs the Try-it steps above run against — live now |
+| [@identyclawconcierge_bot](https://t.me/identyclawconcierge_bot) on Telegram | **Interactive:** talk to a live autonomous agent operating on a RODiT Passport. Opens directly in the Telegram app on mobile (free account needed on desktop). A dated transcript of one of its real sessions is in [docs/LIVE-AGENT.md](docs/LIVE-AGENT.md) |
+
+The agent behind the bot authenticates exactly as this SDK implements: native login
+(challenge → Ed25519 proof → JWT on its home API) and federated login to a sibling
+API in the same token family (`api.lastcradle.io`). Ask it about IdentyClaw Passports,
+HOLA verification, or federated peers.
+
 ---
 
 <!-- discernible-io:product-links -->
