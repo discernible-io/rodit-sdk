@@ -2,6 +2,12 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [10.0.4] — 2026-11-15
+
+### Fixed
+
+- **Client permission wildcards:** `RoditClient.isOperationPermitted` matches `*` keys as anchored globs. Regex metacharacters in the key are literal, and every `*` is expanded. This removes substring matches and polynomial backtracking from permission keys.
+
 ## [10.0.3] — 2026-11-14
 
 ### Changed

@@ -54,6 +54,18 @@ const { sendError, buildErrorResponse } = errorResponse;
 const logger = require('./services/logger');
 // Avoid circular dependency - will require filecredentialsstore dynamically when needed
 
+/**
+ * Full-path glob for a permission key. `*` matches any sequence, including
+ * slashes. Every other character is literal, so a key cannot inject regex
+ * quantifiers. The match is anchored to the whole path.
+ * @param {string} wildcardPath
+ * @returns {RegExp}
+ */
+function permissionWildcardRegExp(wildcardPath) {
+  const escaped = String(wildcardPath).replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${escaped.replace(/\*/g, ".*")}$`);
+}
+
 function sessionFieldsFromJwt(token) {
   if (!token || typeof token !== "string") {
     return {};
@@ -1648,12 +1660,10 @@ class RoditClient {
         return permission.startsWith('+');
       }
       
-      // If not explicitly listed, check for wildcard patterns
-      // This is a simplified implementation - could be enhanced with proper pattern matching
+      // Keys containing * are globs. Other characters stay literal.
       const wildcardPaths = Object.keys(methods).filter(p => p.includes('*'));
       for (const wildcardPath of wildcardPaths) {
-        const pattern = wildcardPath.replace('*', '.*');
-        const regex = new RegExp(pattern);
+        const regex = permissionWildcardRegExp(wildcardPath);
         if (regex.test(path)) {
           const permission = methods[wildcardPath];
           return permission.startsWith('+');

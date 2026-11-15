@@ -4,7 +4,7 @@ Node.js / Express SDK for RODiT-based mutual authentication, authorization, sess
 
 **npm:** [https://www.npmjs.com/package/@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be)  
 **Monorepo:** [discernible-io/rodit-sdk](https://github.com/discernible-io/rodit-sdk) (this directory)  
-**Version:** 10.0.3 · **License:** AGPL-3.0-only · **Author:** Discernible IO · **Node:** >=18
+**Version:** 10.0.4 · **License:** AGPL-3.0-only · **Author:** Discernible IO · **Node:** >=18
 
 ## What is RODiT?
 
@@ -42,7 +42,7 @@ Browser and wallet clients for these APIs use the companion package [`@rodit/rod
 
 **Login `POST /api/login`:** Use **`accountid`** or **`roditid`** (exactly one non-empty), exactly one of **`timestamp`** or **`timestamp_iso`**, and **`base64url_signature`**. Sign UTF-8 bytes of `identifier + timestamp_iso` (legacy) or `identifier + timestamp_iso + nonce` when a challenge `nonce` is present. Reject deprecated keys such as **`signature`** and **`account_id`**. Challenges older than `API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE` (default **300** seconds) are rejected. See [CHANGELOG.md](./CHANGELOG.md) and [TODO.md](./TODO.md) (CC-0001 residual: nonce still optional on the wire until hosts require it).
 
-**Current release (10.0.x):** See [CHANGELOG.md](./CHANGELOG.md) for **10.0.3** (AGPL-3.0-only), **10.0.2** (NEAR RPC deadlines + one logged alternate), **10.0.1** (dead-code scrub), **10.0.0** (JWT peer re-verification no longer re-applies login challenge max-age to `iat`).
+**Current release (10.0.x):** See [CHANGELOG.md](./CHANGELOG.md) for **10.0.4** (anchored permission globs in `isOperationPermitted`), **10.0.3** (AGPL-3.0-only), **10.0.2** (NEAR RPC deadlines + one logged alternate), **10.0.1** (dead-code scrub), **10.0.0** (JWT peer re-verification no longer re-applies login challenge max-age to `iat`).
 
 **Earlier:** Federated `login_server({ apiEndpoint })` (same SR/CR family), webhook SSRF controls, `enforceRateLimitFromClaims()` — also in [CHANGELOG.md](./CHANGELOG.md).
 
@@ -670,6 +670,8 @@ Values are strings: optional scope prefix (`+` / `-`) plus a numeric rate:
 
 `validatepermissions` / `authorize` checks allow/deny and sets `req.rateLimit` from the numeric part. That metadata is inert until you mount `enforceRateLimitFromClaims()` (see [Dynamic Rate Limiting](#dynamic-rate-limiting)).
 
+`authenticate` and `authorize` are separate. `authenticate` verifies the JWT (signature, session, expiry). `authorize` reads the verified caller's `permissioned_routes` and decides the route. Mount them in that order. `authorize` does not repeat signature verification.
+
 ### Permission Validation Middleware
 
 The `authorize` middleware validates that the authenticated user has permission to access the requested route:
@@ -713,8 +715,13 @@ module.exports = router
 
 ### Dynamic Permission Checking
 
+`RoditClient.isOperationPermitted(method, path)` is the local filter used before `request()` sends a bearer token. It returns `false` only when the loaded matrix has an explicit match whose value does not start with `+`. A missing matrix, an unlisted path, or a matcher error returns `true` so the call proceeds. The peer API still runs `authenticate` and `authorize`.
+
+A key that contains `*` is a full-path glob: every `*` matches any sequence, and every other character is literal. The match is anchored to the whole path.
+
 ```javascript
-// Check permissions programmatically
+// Client-side pre-check against this RoditClient's own permission matrix.
+// Incoming route protection is authenticate, then authorize — not this helper.
 const client = req.app.locals.roditClient
 const hasPermission = client.isOperationPermitted('POST', '/api/admin/users')
 if (!hasPermission) {
@@ -724,7 +731,6 @@ if (!hasPermission) {
     requestId: req.requestId
   })
 }
-// Proceed with operation
 ```
 
 ### Permission Validation in Client Token Minting
@@ -1109,14 +1115,14 @@ Controls environment-specific behavior and security settings:
 **Values:**
 - `main` - Main branch deploy (strict security, no error details)
 - `development` - Development branch deploy (relaxed security, detailed errors)
-- `test` - Testing environment (allows bypasses for automated testing)
+- `test` - Testing environment (webhook verification is relaxed so tests can run without a live signer session)
 
 **Default:** `development`
 
 **Controls:**
 - ✅ Error detail exposure in API responses
 - ✅ Peer public key requirement enforcement
-- ✅ Webhook verification bypass (test mode only)
+- ✅ Webhook verification bypass when `NODE_ENV=test`, so webhook handlers can be exercised without a live signer session. `NODE_ENV=main` still requires the session.
 - ✅ Security-critical behavior
 
 #### LOG_LEVEL - Logging Verbosity
@@ -2299,7 +2305,9 @@ port: number
 
 ##### isOperationPermitted(method, path)
 
-Check if an operation is permitted based on token permissions.
+Local pre-check against this client's permission matrix, used by `request()` before the outbound call. Returns `false` only for an explicit match whose value does not start with `+`. A missing matrix or an unlisted path returns `true`. Incoming HTTP authorization is `authenticate` then `authorize`.
+
+Keys containing `*` are full-path globs. Each `*` matches any sequence; other characters are literal.
 
 ```javascript
 const hasPermission = roditClient.isOperationPermitted('POST', '/api/admin/users')

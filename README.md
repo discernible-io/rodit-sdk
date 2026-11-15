@@ -4,7 +4,7 @@ npm packages for [**RODiT**](https://www.discernible.io) / IdentyClaw: NEAR NFT 
 
 | Package | Directory | Version | Docs |
 |---------|-----------|---------|------|
-| [@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be) | [rodit-auth-be/](rodit-auth-be/) | **10.0.3** | [README](rodit-auth-be/README.md) — server login, JWT, permissions, signed webhooks |
+| [@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be) | [rodit-auth-be/](rodit-auth-be/) | **10.0.4** | [README](rodit-auth-be/README.md) — server login, JWT, permissions, signed webhooks |
 | [@rodit/rodit-auth-fe](https://www.npmjs.com/package/@rodit/rodit-auth-fe) | [rodit-auth-fe/](rodit-auth-fe/) | **4.10.15** | [README](rodit-auth-fe/README.md) — browser / NEP-413 client |
 | [@rodit/hola-client](https://www.npmjs.com/package/@rodit/hola-client) | [hola-client/](hola-client/) | **0.1.1** | [README](hola-client/README.md) — create / sign HOLA lines |
 | [@rodit/verify-hola](https://www.npmjs.com/package/@rodit/verify-hola) | [verify-hola/](verify-hola/) | **0.1.7** | [README](verify-hola/README.md) — verify HOLA CLI |
@@ -126,7 +126,7 @@ Primary path for human judges and AI screeners. Each step is **Do** (commands) �
 | An IdentyClaw Passport (NEAR NFT) + its key | Buy/mint at [purchase.identyclaw.com](https://purchase.identyclaw.com) · contract `genaaaa-identyclaw-com.near` |
 | Expected **minimum mint cost** | Longevity **1 month** → recent mainnet mints from ~**0.08 NEAR** attached deposit (example: [B38u9un…](https://nearblocks.io/txns/B38u9unSqXPep3V7ATqJKjfEUdEPhSKCE5KZpdjbXvq8)); the purchase UI shows the exact quote before you pay. Immortal / multi-year is much more. |
 | Transfer deposit (Step 3) | Exactly **0.01 NEAR** attached to `rodit_transfer` |
-| SDK packages | `cd examples && npm install` (local `@rodit/rodit-auth-be@10.0.3`) or npm |
+| SDK packages | `cd examples && npm install` (local `@rodit/rodit-auth-be@10.0.4`) or npm |
 
 **Judges — cheapest path for Steps 1–3:** open [purchase.identyclaw.com](https://purchase.identyclaw.com), set longevity to **1 month**, pay the quoted NEAR, receive the Passport on the recipient account, put that account’s key material in `NEAR_CREDENTIALS_FILE_PATH` below. One Passport covers native, federated, and transfer. There is no shared public demo Passport (keys would be burned immediately); Step 0 needs none.
 
