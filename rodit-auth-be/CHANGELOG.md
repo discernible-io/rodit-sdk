@@ -2,6 +2,16 @@
 
 All notable changes to `@rodit/rodit-auth-be` are documented here.
 
+## [10.0.5] — 2026-11-15
+
+### Added
+
+- **TypeScript entry types:** ships `index.d.ts` for login, authorize, and webhook middleware surfaces.
+
+### Changed
+
+- **Package metadata:** NEAR / agent-focused description and keywords; `engines.node` is `>=20`.
+
 ## [10.0.4] — 2026-11-15
 
 ### Fixed

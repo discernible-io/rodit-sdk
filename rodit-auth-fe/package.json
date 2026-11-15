@@ -1,12 +1,19 @@
 {
   "name": "@rodit/rodit-auth-fe",
-  "version": "4.10.15",
-  "description": "JavaScript sdk for interacting with RODiT authentication and API services",
+  "version": "4.10.16",
+  "description": "Browser NEAR Passport / RODiT client: NEP-413 wallet login, on-chain ownership checks, and JWT sessions for agent APIs",
   "main": "index.js",
   "browser": "index.js",
+  "types": "index.d.ts",
   "exports": {
-    ".": "./index.js",
-    "./chain": "./chain.js"
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./chain": {
+      "types": "./chain.d.ts",
+      "default": "./chain.js"
+    }
   },
   "scripts": {
     "build": "echo 'SDK build complete - no build step required for this package'",
@@ -16,10 +23,15 @@
   },
   "keywords": [
     "rodit",
+    "near",
+    "near-protocol",
+    "agent",
+    "passport",
+    "web3",
     "authentication",
-    "api",
-    "sdk",
-    "rodit"
+    "nep-413",
+    "jwt",
+    "sdk"
   ],
   "author": "Discernible IO",
   "license": "AGPL-3.0-only",
@@ -28,7 +40,7 @@
     "jwt-decode": "^4.0.0",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
-    "ulid": "^2.3.0"
+    "ulid": "^3.0.2"
   },
   "devDependencies": {
     "eslint": "^8.40.0",
@@ -36,7 +48,9 @@
   },
   "files": [
     "index.js",
+    "index.d.ts",
     "chain.js",
+    "chain.d.ts",
     "utils.js",
     "lib/**/*.js",
     "frontend/**/*.js",
@@ -45,7 +59,7 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20"
   },
   "repository": {
     "type": "git",
@@ -55,5 +69,8 @@
   "bugs": {
     "url": "https://github.com/discernible-io/rodit-sdk/issues"
   },
-  "homepage": "https://github.com/discernible-io/rodit-sdk/tree/main/rodit-auth-fe#readme"
+  "homepage": "https://github.com/discernible-io/rodit-sdk/tree/main/rodit-auth-fe#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

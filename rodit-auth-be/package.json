@@ -1,24 +1,35 @@
 {
   "name": "@rodit/rodit-auth-be",
-  "version": "10.0.4",
-  "description": "RODiT-based authentication system for Express.js applications",
+  "version": "10.0.5",
+  "description": "NEAR Passport / RODiT Express auth: agent login, JWT sessions, permissions, and signed webhooks without API keys",
   "main": "index.js",
+  "types": "index.d.ts",
   "exports": {
-    ".": "./index.js"
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
   },
   "scripts": {},
   "keywords": [
+    "near",
+    "near-protocol",
+    "rodit",
+    "passport",
+    "ai-agents",
     "authentication",
     "express",
     "middleware",
     "jwt",
-    "rodit"
+    "webhooks",
+    "api-keys"
   ],
   "author": "Discernible IO",
   "license": "AGPL-3.0-only",
   "private": false,
   "files": [
     "index.js",
+    "index.d.ts",
     "lib/**/*",
     "services/**/*",
     "CHANGELOG.md",
@@ -56,6 +67,6 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20"
   }
 }

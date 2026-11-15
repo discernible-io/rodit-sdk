@@ -1,33 +1,44 @@
 {
   "name": "@rodit/verify-hola",
-  "version": "0.1.7",
-  "description": "Verify HOLA lines and build passport reports via api.identyclaw.com (no JWT required for verify)",
+  "version": "0.1.8",
+  "description": "Verify IdentyClaw HOLA lines and Passport reports for NEAR agents (CLI and library, optional direct RPC)",
   "license": "AGPL-3.0-only",
   "type": "commonjs",
   "main": "lib/report.js",
+  "types": "index.d.ts",
   "bin": {
     "verify-hola": "bin/verify-hola.js"
   },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./lib/report.js"
+    }
+  },
   "dependencies": {
-    "@rodit/rodit-auth-be": "10.0.3",
+    "@rodit/rodit-auth-be": "^10.0.5",
     "hi-base32": "^0.5.1",
     "tweetnacl": "^1.0.3"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "files": [
     "bin",
     "lib",
+    "index.d.ts",
     "README.md",
     "LICENSE"
   ],
   "keywords": [
     "identyclaw",
     "hola",
-    "agent-identity",
-    "verification",
     "near",
+    "near-protocol",
+    "agent-identity",
+    "ai-agents",
+    "passport",
+    "verification",
     "rodit"
   ],
   "author": "Discernible IO",

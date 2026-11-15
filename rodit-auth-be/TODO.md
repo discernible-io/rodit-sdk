@@ -22,3 +22,31 @@ Authoritative harness (if needed): `~/CodeCome/itemdb/findings/` and `~/CodeCome
 
 - IdentyClaw already documents the residual (max-age enforced; legacy no-nonce replay still possible inside the window) in `session.privileged.routes.js`.
 - Full HTTP re-validation against live NEAR was optional evidence; not required to finish the remaining code fixes above.
+
+## npm packaging and discoverability (monorepo)
+
+Cross-package work for all four `@rodit/*` packages. Highest trust-per-minute first.
+
+### Provenance
+
+- [ ] **npm provenance attestation:** Publish from GitHub Actions with OIDC (`npm publish --provenance`) so each tarball carries a signed, verifiable build-provenance badge linked to the exact repo commit. For a product pitched on signed provenance for agents, unsigned tarballs are a credibility gap. Effort: one workflow + `--provenance`. Also timely: npm already warns that 2FA-bypass tokens die in Jan 2027 — migrate to trusted publishing now.
+
+### Discoverability
+
+- [x] **Keywords and descriptions:** NEAR / agent / Express / passport keywords and descriptions updated on all four packages (2026-11-15).
+
+### Dependency hygiene
+
+- [x] **`verify-hola` pin:** `@rodit/rodit-auth-be` is `^10.0.5` in `verify-hola@0.1.8`.
+- [x] **`ulid` range:** Auth packages use `^3.0.2`.
+- [x] **`engines.node`:** All four packages use `>=20`.
+
+### TypeScript
+
+- [x] **Ship `.d.ts` for entry surfaces:** Hand-written entry types for login / authorize / webhooks (`rodit-auth-be`), NEP-413 client (`rodit-auth-fe`), `createHola` (`hola-client`), and verify/report (`verify-hola`).
+
+### Tarball polish
+
+- [x] **`files` whitelist:** Entry `.d.ts` files included; packages keep explicit `files` lists.
+- [x] **`bugs` field:** All four packages point at the monorepo issues URL.
+- [x] **npx / install quickstart:** Install or `npx` line at the top of each package README.

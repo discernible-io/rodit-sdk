@@ -4,7 +4,11 @@ Node.js / Express SDK for RODiT-based mutual authentication, authorization, sess
 
 **npm:** [https://www.npmjs.com/package/@rodit/rodit-auth-be](https://www.npmjs.com/package/@rodit/rodit-auth-be)  
 **Monorepo:** [discernible-io/rodit-sdk](https://github.com/discernible-io/rodit-sdk) (this directory)  
-**Version:** 10.0.4 · **License:** AGPL-3.0-only · **Author:** Discernible IO · **Node:** >=18
+**Version:** 10.0.5 · **License:** AGPL-3.0-only · **Author:** Discernible IO · **Node:** >=20
+
+```bash
+npm install @rodit/rodit-auth-be
+```
 
 ## What is RODiT?
 
@@ -42,7 +46,7 @@ Browser and wallet clients for these APIs use the companion package [`@rodit/rod
 
 **Login `POST /api/login`:** Use **`accountid`** or **`roditid`** (exactly one non-empty), exactly one of **`timestamp`** or **`timestamp_iso`**, and **`base64url_signature`**. Sign UTF-8 bytes of `identifier + timestamp_iso` (legacy) or `identifier + timestamp_iso + nonce` when a challenge `nonce` is present. Reject deprecated keys such as **`signature`** and **`account_id`**. Challenges older than `API_DEFAULT_OPTIONS.TIMESTAMP_MAX_AGE` (default **300** seconds) are rejected. See [CHANGELOG.md](./CHANGELOG.md) and [TODO.md](./TODO.md) (CC-0001 residual: nonce still optional on the wire until hosts require it).
 
-**Current release (10.0.x):** See [CHANGELOG.md](./CHANGELOG.md) for **10.0.4** (anchored permission globs in `isOperationPermitted`), **10.0.3** (AGPL-3.0-only), **10.0.2** (NEAR RPC deadlines + one logged alternate), **10.0.1** (dead-code scrub), **10.0.0** (JWT peer re-verification no longer re-applies login challenge max-age to `iat`).
+**Current release (10.0.x):** See [CHANGELOG.md](./CHANGELOG.md) for **10.0.5** (TypeScript entry types + package metadata), **10.0.4** (anchored permission globs in `isOperationPermitted`), **10.0.3** (AGPL-3.0-only), **10.0.2** (NEAR RPC deadlines + one logged alternate), **10.0.1** (dead-code scrub), **10.0.0** (JWT peer re-verification no longer re-applies login challenge max-age to `iat`).
 
 **Earlier:** Federated `login_server({ apiEndpoint })` (same SR/CR family), webhook SSRF controls, `enforceRateLimitFromClaims()` — also in [CHANGELOG.md](./CHANGELOG.md).
 

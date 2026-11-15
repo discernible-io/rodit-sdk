@@ -1,6 +1,10 @@
 # @rodit/verify-hola
 
-**Version:** 0.1.7 · Depends on `@rodit/rodit-auth-be` **10.0.3** for `--rpc` chain reads. · **License:** AGPL-3.0-only
+**Version:** 0.1.8 · Depends on `@rodit/rodit-auth-be` **^10.0.5** for `--rpc` chain reads. · **License:** AGPL-3.0-only · **Node:** >=20
+
+```bash
+npx @rodit/verify-hola report "HOLA/MUNDO/..."
+```
 
 Part of the [Discernible IO SDK monorepo](../README.md).
 

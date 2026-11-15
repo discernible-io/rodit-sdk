@@ -1,6 +1,10 @@
 # @rodit/hola-client
 
-**Version:** 0.1.1
+**Version:** 0.1.2 · **License:** AGPL-3.0-only · **Node:** >=20
+
+```bash
+npm install @rodit/hola-client
+```
 
 Node helpers for IdentyClaw **HOLA line** construction — uppercase canonicalization, RFC 4648 base32 signatures, and mod-23 checksum.
 

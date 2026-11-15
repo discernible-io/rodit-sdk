@@ -1,20 +1,28 @@
 {
   "name": "@rodit/hola-client",
-  "version": "0.1.1",
-  "description": "Create and parse IdentyClaw HOLA handshake lines (uppercase canonicalization, base32, mod-23 checksum)",
+  "version": "0.1.2",
+  "description": "Create and sign IdentyClaw HOLA lines for NEAR agent mutual authentication (base32, mod-23 checksum)",
   "license": "AGPL-3.0-only",
   "type": "commonjs",
   "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
   "dependencies": {
     "bs58": "^5.0.0",
     "hi-base32": "^0.5.1",
     "tweetnacl": "^1.0.3"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "files": [
     "index.js",
+    "index.d.ts",
     "lib",
     "README.md",
     "LICENSE"
@@ -22,9 +30,12 @@
   "keywords": [
     "identyclaw",
     "hola",
-    "agent-identity",
-    "signing",
     "near",
+    "near-protocol",
+    "agent-identity",
+    "ai-agents",
+    "passport",
+    "signing",
     "rodit"
   ],
   "author": "Discernible IO",

@@ -29,7 +29,9 @@ test("package entry files exist", () => {
   assert.strictEqual(pkg.name, "@rodit/rodit-auth-fe");
   for (const file of [
     pkg.main,
+    pkg.types,
     "chain.js",
+    "chain.d.ts",
     "utils.js",
     "services/logger.js",
     "frontend/rodit_fe.js",
@@ -43,8 +45,10 @@ test("package exports include ./chain subpath", () => {
   const root = path.join(__dirname, "..");
   const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
   assert.ok(pkg.exports, "expected exports map");
-  assert.strictEqual(pkg.exports["."], "./index.js");
-  assert.strictEqual(pkg.exports["./chain"], "./chain.js");
+  assert.strictEqual(pkg.exports["."].default, "./index.js");
+  assert.strictEqual(pkg.exports["."].types, "./index.d.ts");
+  assert.strictEqual(pkg.exports["./chain"].default, "./chain.js");
+  assert.strictEqual(pkg.exports["./chain"].types, "./chain.d.ts");
 });
 
 test("chain blockchain helpers do not pull utils.js (Metro/crypto)", () => {
